@@ -1,3 +1,3 @@
 export function trim(str: string): string {
-  return str.replace(/^\s+/, "").toLowerCase();
+    return str.replace(/^\s+/, "").toLowerCase();
 }
