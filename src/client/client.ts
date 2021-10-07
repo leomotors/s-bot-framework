@@ -45,15 +45,14 @@ export class SBotClient extends Client {
 
         this.on("ready", () => {
             console.log(`Bot Mounted on ${this.user?.tag}`);
+            this.setSelfActivity();
         });
 
         this.login(token);
 
         setInterval(() => {
-            if (!this.state.activity) return;
-            const { type, name = "" } = this.state.activity;
-            this.user?.setActivity(name, { type, name });
-        }, activityRefreshInterval);
+            this.setSelfActivity();
+        }, activityRefreshInterval * 1000);
 
         this.on("messageCreate", this.response);
     }
@@ -65,6 +64,12 @@ export class SBotClient extends Client {
     useActivity(activity: ActivityOptions) {
         const { type, name = "" } = activity;
         this.state.activity = activity;
+        this.user?.setActivity(name, { type, name });
+    }
+
+    private setSelfActivity() {
+        if (!this.state.activity) return;
+        const { type, name = "" } = this.state.activity;
         this.user?.setActivity(name, { type, name });
     }
 
