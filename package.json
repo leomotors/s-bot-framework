@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/Leomotors/s-bot-framework#readme",
   "dependencies": {
+    "chalk": "^4.1.2",
     "discord.js": "^13.2.0"
   },
   "devDependencies": {
