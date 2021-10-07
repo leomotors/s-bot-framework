@@ -14,8 +14,16 @@ export class DataLoader<T = string> {
     }
 
     async loadData() {
-        const buffer = await fs.readFile(this.data_path);
-        const obj = JSON.parse(buffer.toString());
-        this.data = this.data_key ? obj[this.data_key] : obj;
+        try {
+            const buffer = await fs.readFile(this.data_path);
+            const obj = JSON.parse(buffer.toString());
+            this.data = this.data_key ? obj[this.data_key] : obj;
+        } catch (err) {
+            this.data = [];
+        }
+    }
+
+    getData() {
+        return this.data;
     }
 }

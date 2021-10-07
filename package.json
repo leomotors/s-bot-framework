@@ -4,6 +4,7 @@
   "description": "Salim Bot's Framework but also applicable for other uses",
   "main": "dist/index.js",
   "types": "dist",
+  "type": "module",
   "scripts": {
     "build": "yarn clean && tsc -p .",
     "clean": "rm -rf dist"
