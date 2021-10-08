@@ -80,6 +80,7 @@ export class SBotClient extends Client {
     }
 
     useResponse(response: Response) {
+        response.setClient(this);
         this.utility.response.push(response);
     }
 

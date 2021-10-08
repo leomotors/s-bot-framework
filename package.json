@@ -1,6 +1,6 @@
 {
   "name": "s-bot-framework",
-  "version": "1.0.0",
+  "version": "1.0.0-alpha.10",
   "description": "Salim Bot's Framework but also applicable for other uses",
   "main": "dist/index.js",
   "types": "dist",

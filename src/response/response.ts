@@ -1,6 +1,6 @@
 import { trim } from "../utils/string";
 import { Loader } from "../data/loader";
-import { MessageResponse } from "../client";
+import { MessageResponse, SBotClient } from "../client";
 
 export interface TriggerOptions {
     prefixes?: string[];
@@ -21,7 +21,12 @@ export interface ResponseOptions {
 }
 
 export class Response {
-    private clientID: () => string = () => "";
+    private client?: SBotClient;
+
+    setClient(client: SBotClient) {
+        this.client = client;
+    }
+
     private trigger: TriggerOptions;
     private response: responseOptions;
 
@@ -49,7 +54,8 @@ export class Response {
             keywords,
             keywords_exact_check = false,
         } = this.trigger;
-        if (mention && !message.includes(this.clientID())) return false;
+        if (mention && !message.includes(this.client?.user?.id ?? ""))
+            return false;
 
         if (
             prefixes.length &&
