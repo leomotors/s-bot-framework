@@ -3,7 +3,13 @@ import { ActivityOptions, Client, Message, Intents } from "discord.js";
 import { sLogger } from "../logger";
 import { Response } from "../response/response";
 import { Console } from "../console/console";
-import { DataLoader } from "../manager";
+import { DataLoader } from "../data";
+
+export interface MessageResponse {
+    message: string;
+    react?: string;
+    reply?: boolean;
+}
 
 export interface SBotOptions {
     token?: string;
@@ -18,7 +24,7 @@ export class SBotClient extends Client {
         loader: DataLoader[];
     };
 
-    private get log() {
+    get log() {
         return this.utility.logger.log;
     }
 
@@ -82,7 +88,14 @@ export class SBotClient extends Client {
 
         for (const response of this.utility.response) {
             if (response.isTrigger(msg.content)) {
-                msg.channel.send(response.response());
+                const reply = response.getReply();
+                try {
+                    if (reply.react) msg.react(reply.react);
+                    if (reply.reply) msg.reply(reply.message);
+                    else msg.channel.send(reply.message);
+                } catch (err) {
+                    // TODO Log Error
+                }
                 return;
             }
         }

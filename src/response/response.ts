@@ -1,26 +1,38 @@
 import { trim } from "../utils/string";
-import { DataLoader } from "../manager";
+import { Loader } from "../data/loader";
+import { MessageResponse } from "../client";
 
 export interface TriggerOptions {
     prefixes?: string[];
     mention?: boolean;
-    keywords: string[] | DataLoader;
+    keywords: string[] | Loader;
     keywords_exact_check?: boolean;
+}
+
+export interface responseOptions {
+    loader: Loader;
+    reply?: boolean;
+    react?: string;
 }
 
 export interface ResponseOptions {
     trigger: TriggerOptions;
-    response: () => string;
+    response: responseOptions;
 }
 
 export class Response {
-    clientID: () => string = () => "";
-    trigger: TriggerOptions;
-    response: () => string;
+    private clientID: () => string = () => "";
+    private trigger: TriggerOptions;
+    private response: responseOptions;
 
     private triggeredKeyword?: string;
     get triggered() {
         return this.triggeredKeyword;
+    }
+
+    private returnedItem?: { index: number; data: string };
+    get lastReturned() {
+        return this.returnedItem;
     }
 
     constructor(Options: ResponseOptions) {
@@ -55,7 +67,7 @@ export class Response {
 
         let data: string[] = [];
 
-        if (keywords instanceof DataLoader) {
+        if (keywords instanceof Loader) {
             data = keywords.getData();
         } else {
             data = keywords;
@@ -67,5 +79,24 @@ export class Response {
             }
 
         return false;
+    }
+
+    getReply(): MessageResponse {
+        const data = this.response.loader.getData();
+        const selectedIndex = Math.floor(
+            this.response.loader.getData().length * Math.random()
+        );
+        let selectedData = data[selectedIndex];
+
+        this.returnedItem = {
+            index: selectedIndex,
+            data: selectedData,
+        };
+
+        return {
+            message: selectedData,
+            react: this.response.react,
+            reply: this.response.reply,
+        };
     }
 }
