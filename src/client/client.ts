@@ -1,6 +1,6 @@
 import { ActivityOptions, Client, Message, Intents } from "discord.js";
 
-import { sLogger } from "../logger";
+import { sLogger as Logger } from "../logger/logger";
 import { Response } from "../response/response";
 import { Console } from "../console/console";
 import { DataLoader } from "../data";
@@ -18,15 +18,10 @@ export interface SBotOptions {
 
 export class SBotClient extends Client {
     private utility: {
-        logger: sLogger;
         response: Response[];
         console?: Console;
         loader: DataLoader[];
     };
-
-    get log() {
-        return this.utility.logger.log;
-    }
 
     constructor(options: SBotOptions) {
         super({
@@ -42,10 +37,11 @@ export class SBotClient extends Client {
 
         // * Initialize Utility Classes
         this.utility = {
-            logger: new sLogger(),
             response: [],
             loader: [],
         };
+
+        Logger.startFile();
 
         const { token, activityRefreshInterval = 300 } = options;
 
@@ -87,6 +83,8 @@ export class SBotClient extends Client {
     private response(msg: Message) {
         if (msg.author.id == this.user?.id) return;
 
+        Logger.log(`Recieved Message from ${msg.author.tag}: ${msg.content}`);
+
         for (const response of this.utility.response) {
             if (response.isTrigger(msg.content)) {
                 const reply = response.getReply();
@@ -94,8 +92,14 @@ export class SBotClient extends Client {
                     if (reply.react) msg.react(reply.react);
                     if (reply.reply) msg.reply(reply.message);
                     else msg.channel.send(reply.message);
+                    Logger.log(
+                        `Replied ${msg.author.tag} with ${reply.message}`
+                    );
                 } catch (err) {
-                    // TODO Log Error
+                    Logger.log(
+                        `Error while responding to message : ${err}`,
+                        "ERROR"
+                    );
                 }
                 return;
             }
