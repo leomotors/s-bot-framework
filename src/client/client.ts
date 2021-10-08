@@ -1,9 +1,12 @@
 import { ActivityOptions, Client, Message, Intents } from "discord.js";
+import chalk from "chalk";
 
 import { sLogger as Logger } from "../logger/logger";
 import { Response } from "../response/response";
 import { Console } from "../console/console";
 import { DataLoader } from "../data";
+
+import { Version as FrameworkVersion } from "../config";
 
 export interface MessageResponse {
     message: string;
@@ -35,6 +38,12 @@ export class SBotClient extends Client {
             ],
         });
 
+        console.log(
+            chalk.cyan("Starting S-Bot Framework ") +
+                chalk.magenta(FrameworkVersion) +
+                "✨✨"
+        );
+
         // * Initialize Utility Classes
         this.utility = {
             response: [],
@@ -46,7 +55,11 @@ export class SBotClient extends Client {
         const { token, activityRefreshInterval = 300 } = options;
 
         this.on("ready", () => {
-            console.log(`Bot Mounted on ${this.user?.tag}`);
+            Logger.log(
+                `=====> Logged in! Bot Mounted on ${this.user?.tag} <=====`,
+                "SPECIAL",
+                false
+            );
             this.setSelfActivity();
         });
 

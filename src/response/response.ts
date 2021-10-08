@@ -1,16 +1,16 @@
 import { trim } from "../utils/string";
-import { Loader } from "../data/loader";
+import { StringLoader } from "../data";
 import { MessageResponse, SBotClient } from "../client";
 
 export interface TriggerOptions {
     prefixes?: string[];
     mention?: boolean;
-    keywords: string[] | Loader;
+    keywords: string[] | StringLoader;
     keywords_exact_check?: boolean;
 }
 
 export interface responseOptions {
-    loader: Loader;
+    loader: StringLoader;
     reply?: boolean;
     react?: string;
 }
@@ -73,7 +73,7 @@ export class Response {
 
         let data: string[] = [];
 
-        if (keywords instanceof Loader) {
+        if (keywords instanceof StringLoader) {
             data = keywords.getData();
         } else {
             data = keywords;

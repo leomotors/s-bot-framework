@@ -1,6 +1,6 @@
-import { Loader } from "./loader";
+import { StringLoader } from "./stringLoader";
 
-export class ComputedLoader extends Loader {
+export class ComputedLoader extends StringLoader {
     private loadFunction: () => string | string[];
 
     constructor(loadFunction: () => string | string[]) {

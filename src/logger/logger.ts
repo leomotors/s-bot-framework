@@ -3,7 +3,9 @@ import { getFormattedTime } from "./time";
 import fs from "fs/promises";
 import chalk from "chalk";
 
-export type LogStatus = "NORMAL" | "WARNING" | "ERROR" | "SUCCESS";
+import { Version as FrameworkVersion } from "../config";
+
+export type LogStatus = "NORMAL" | "WARNING" | "ERROR" | "SUCCESS" | "SPECIAL";
 
 export abstract class sLogger {
     private static file_path: string;
@@ -16,7 +18,8 @@ export abstract class sLogger {
         try {
             await fs.writeFile(
                 actual_path,
-                `Created at ${getFormattedTime()}\n\n`
+                `Created at ${getFormattedTime()}
+                Framework Version: ${FrameworkVersion}\n\n`
             );
             sLogger.file_status = true;
         } catch (err) {
@@ -45,6 +48,7 @@ export abstract class sLogger {
         else if (status == "WARNING") console.log(chalk.yellow(logmsg));
         else if (status == "ERROR") console.log(chalk.red(logmsg));
         else if (status == "SUCCESS") console.log(chalk.green(logmsg));
+        else if (status == "SPECIAL") console.log(chalk.cyan(logmsg));
         else
             console.log(
                 chalk.red(`LOGGER ERROR: Unknown log status of ${status}!`)

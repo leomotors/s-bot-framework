@@ -1,11 +1,11 @@
-import { Loader } from "./loader";
+import { StringLoader } from ".";
 
 export interface MultiLoaderOptions {
-    loader: Loader;
+    loader: StringLoader;
     label: string;
 }
 
-export class MultiLoader extends Loader {
+export class MultiLoader extends StringLoader {
     private loaders: MultiLoaderOptions[];
 
     constructor(loaders: MultiLoaderOptions[]) {

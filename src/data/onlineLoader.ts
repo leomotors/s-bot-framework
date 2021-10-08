@@ -1,7 +1,8 @@
 import fetch from "node-fetch";
-import { Loader, transformFunction } from "./loader";
+import { StringLoader, transformFunction } from "./stringLoader";
+import { sLogger } from "../logger";
 
-export class OnlineLoader extends Loader {
+export class OnlineLoader extends StringLoader {
     private url: string;
     private data_key?: string;
 
@@ -21,6 +22,10 @@ export class OnlineLoader extends Loader {
             const obj = JSON.parse(restxt);
             this.data = this.mapTransform(
                 this.data_key ? obj[this.data_key] : obj
+            );
+            sLogger.log(
+                `Successfully fetched ${this.data.length} datas from ${this.url}`,
+                "SUCCESS"
             );
         } catch (err) {
             // TODO Log error

@@ -806,6 +806,13 @@ json-stable-stringify-without-jsonify@^1.0.1:
   resolved "https://registry.npmjs.org/json-stable-stringify-without-jsonify/-/json-stable-stringify-without-jsonify-1.0.1.tgz"
   integrity sha1-nbe1lJatPzz+8wp1FC0tkwrXJlE=
 
+leomotors-automation@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/leomotors-automation/-/leomotors-automation-1.0.1.tgz#ea9ac5f4471ae76508718142746883d55a89c70d"
+  integrity sha512-OeO/Vy1G+B8u+NEPN8XsGb4YwqU8Y7OBhKzcMUNQ6RSkcMzOUZcAifjGhJAqRzF0DjlvR4Rn6DYIoLQ4UeVqUQ==
+  dependencies:
+    chalk "^4.1.2"
+
 levn@^0.4.1:
   version "0.4.1"
   resolved "https://registry.npmjs.org/levn/-/levn-0.4.1.tgz"

@@ -1,13 +1,14 @@
 {
   "name": "s-bot-framework",
-  "version": "1.0.0-alpha.12",
+  "version": "1.0.0-alpha.16",
   "description": "Discord Bot Framework built for Salim Bot but also applicable for other uses",
   "main": "dist/index.js",
   "types": "dist",
   "type": "module",
   "scripts": {
-    "build": "yarn clean && tsc -p .",
-    "clean": "rm -rf dist"
+    "build": "yarn config:pkg && yarn clean && tsc -p .",
+    "clean": "rm -rf dist",
+    "config:pkg": "node node_modules/leomotors-automation/configPackage.js"
   },
   "repository": {
     "type": "git",
@@ -30,6 +31,7 @@
     "eslint": "^7.32.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^4.0.0",
+    "leomotors-automation": "^1.0.1",
     "prettier": "^2.4.1"
   }
 }
