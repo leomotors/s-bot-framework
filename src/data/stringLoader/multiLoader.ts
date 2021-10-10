@@ -1,4 +1,4 @@
-import { StringLoader } from ".";
+import { StringLoader } from "./stringLoader";
 
 export interface MultiLoaderOptions {
     loader: StringLoader;

@@ -1,6 +1,6 @@
 import fetch from "node-fetch";
 import { StringLoader, transformFunction } from "./stringLoader";
-import { sLogger } from "../logger";
+import { sLogger } from "../../logger";
 
 export class OnlineLoader extends StringLoader {
     private url: string;
