@@ -1,11 +1,12 @@
 import readline from "readline";
 import type { SBotClient } from "../client/";
+import { Loader } from "../data/loader";
 
 export class Console {
-    client?: SBotClient;
+    sbclient?: SBotClient;
 
     constructor(client: SBotClient) {
-        this.client = client;
+        this.sbclient = client;
 
         const rl = readline.createInterface({
             input: process.stdin,
@@ -20,11 +21,19 @@ export class Console {
     execute(cmd: string) {
         const cmds = cmd.split(" ");
         switch (cmds[0]) {
+            case "reload":
+                for (const loader of this.loaders) loader.loadData();
+                break;
             case "logout":
-                this.client?.destroy();
+                this.sbclient?.client?.destroy();
                 process.exit(0);
             default:
                 return "Unknown Command";
         }
+    }
+
+    private loaders: Loader[] = [];
+    addLoader(...args: Loader[]) {
+        this.loaders.push(...args);
     }
 }

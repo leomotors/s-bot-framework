@@ -31,6 +31,7 @@ export class DataLoader extends StringLoader {
             );
         } catch (err) {
             this.data = [];
+            sLogger.log(`Can't load data from ${this.data_path}`, "ERROR");
         }
     }
 }

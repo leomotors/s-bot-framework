@@ -28,7 +28,7 @@ export class OnlineLoader extends StringLoader {
                 "SUCCESS"
             );
         } catch (err) {
-            // TODO Log error
+            sLogger.log(`Can't fetch data from ${this.url}`, "ERROR");
         }
     }
 }

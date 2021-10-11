@@ -13,6 +13,7 @@ export interface responseOptions {
     loader: StringLoader;
     reply?: boolean;
     react?: string;
+    audio?: boolean;
 }
 
 export interface ResponseOptions {
@@ -103,6 +104,7 @@ export class Response {
             message: selectedData,
             react: this.response.react,
             reply: this.response.reply,
+            audio: this.response.audio,
         };
     }
 }

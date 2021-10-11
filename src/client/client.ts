@@ -1,10 +1,13 @@
 import { ActivityOptions, Client, Message, Intents } from "discord.js";
 import chalk from "chalk";
+import dotenv from "dotenv";
+dotenv.config();
 
 import { sLogger as Logger } from "../logger/logger";
 import { Response } from "../response/response";
 import { Console } from "../console/console";
 import { DataLoader } from "../data";
+import { Voice } from "../voice/voice";
 
 import { Version as FrameworkVersion } from "../config";
 
@@ -12,22 +15,38 @@ export interface MessageResponse {
     message: string;
     react?: string;
     reply?: boolean;
+    audio?: boolean;
 }
 
 export interface SBotOptions {
     token?: string;
     activityRefreshInterval?: number;
 }
+export interface TTSOptions {
+    prefix?: string;
+    onJoin?: string;
+}
 
-export class SBotClient extends Client {
+interface InnerTTSOptions {
+    express: boolean;
+    prefix: string;
+    onJoin?: string;
+}
+
+export class SBotClient {
+    client: Client;
+    get user() {
+        return this.client.user;
+    }
+
     private utility: {
         response: Response[];
         console?: Console;
         loader: DataLoader[];
     };
 
-    constructor(options: SBotOptions) {
-        super({
+    constructor(options?: SBotOptions) {
+        this.client = new Client({
             intents: [
                 Intents.FLAGS.GUILDS,
                 Intents.FLAGS.GUILD_MESSAGES,
@@ -52,24 +71,27 @@ export class SBotClient extends Client {
 
         Logger.startFile();
 
-        const { token, activityRefreshInterval = 300 } = options;
+        const {
+            token = process.env.DISCORD_TOKEN,
+            activityRefreshInterval = 300,
+        } = options ?? {};
 
-        this.on("ready", () => {
+        this.client.on("ready", () => {
             Logger.log(
-                `=====> Logged in! Bot Mounted on ${this.user?.tag} <=====`,
+                `=====> Logged in! Bot Mounted on ${this.client.user?.tag} <=====`,
                 "SPECIAL",
                 false
             );
             this.setSelfActivity();
         });
 
-        this.login(token);
+        this.client.login(token);
 
         setInterval(() => {
             this.setSelfActivity();
         }, activityRefreshInterval * 1000);
 
-        this.on("messageCreate", this.response);
+        this.client.on("messageCreate", this.response.bind(this));
     }
 
     private state: {
@@ -79,13 +101,13 @@ export class SBotClient extends Client {
     useActivity(activity: ActivityOptions) {
         const { type, name = "" } = activity;
         this.state.activity = activity;
-        this.user?.setActivity(name, { type, name });
+        this.client.user?.setActivity(name, { type, name });
     }
 
     private setSelfActivity() {
         if (!this.state.activity) return;
         const { type, name = "" } = this.state.activity;
-        this.user?.setActivity(name, { type, name });
+        this.client.user?.setActivity(name, { type, name });
     }
 
     useResponse(response: Response) {
@@ -94,9 +116,16 @@ export class SBotClient extends Client {
     }
 
     private response(msg: Message) {
-        if (msg.author.id == this.user?.id) return;
+        if (msg.author.id == this.client.user?.id) return;
 
         Logger.log(`Recieved Message from ${msg.author.tag}: ${msg.content}`);
+
+        if (this.ttsOptions && !this.ttsOptions.express) {
+            if (msg.content.toLowerCase().startsWith(this.ttsOptions.prefix)) {
+                this.pursueUser(msg);
+                return;
+            }
+        }
 
         for (const response of this.utility.response) {
             if (response.isTrigger(msg.content)) {
@@ -125,5 +154,24 @@ export class SBotClient extends Client {
 
     useDataLoader(loader: DataLoader) {
         this.utility.loader.push(loader);
+    }
+
+    // * VOICE SECTION
+
+    private voice?: Voice;
+    private ttsOptions?: InnerTTSOptions;
+
+    useTTS(Options: TTSOptions) {
+        this.ttsOptions = {
+            prefix: Options.prefix ?? "__NOT_AVAILABLE__",
+            express: !Options.prefix,
+            onJoin: Options.onJoin,
+        };
+    }
+
+    async pursueUser(msg: Message) {
+        this.voice = new Voice(msg);
+        const result = await this.voice.waitTillReady();
+        if (!result) this.voice = undefined;
     }
 }
