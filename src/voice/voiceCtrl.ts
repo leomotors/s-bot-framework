@@ -14,6 +14,8 @@ import {
 
 import { Message, StageChannel, VoiceChannel } from "discord.js";
 
+import chalk from "chalk";
+
 import { getAllAudioBase64 } from "google-tts-api";
 import ytdl from "ytdl-core";
 
@@ -91,6 +93,10 @@ export class VoiceControl {
                     // Seems to be reconnecting to a new channel - ignore disconnect
                 } catch (error) {
                     // Seems to be a real disconnect which SHOULDN'T be recovered from
+                    sLogger.log(
+                        `Disconnected from ${this.channelName}`,
+                        "WARNING"
+                    );
                     this.destruct();
                 }
             }
@@ -103,14 +109,16 @@ export class VoiceControl {
         this.handleDisconnect();
     }
 
-    async waitTillReady(): Promise<boolean> {
+    async waitTillReady(mode: string): Promise<boolean> {
         const connection = getVoiceConnection(this.guildID);
 
         if (!connection) return false;
         try {
             await entersState(connection, VoiceConnectionStatus.Ready, 5000);
             sLogger.log(
-                `Successfully joined ${this.channelName} as SOD Mode`,
+                `Successfully joined ${this.channelName} as ${chalk.magenta(
+                    mode
+                )} 🤩🤩`,
                 "SUCCESS"
             );
             return true;
@@ -124,7 +132,7 @@ export class VoiceControl {
 
     async speak(content: string) {
         sLogger.log(
-            `[TTS] Started Speaking ${shorten(content, 20)} to ${
+            `[TTS] Started Speaking ${shorten(content, 30)} to ${
                 this.channelName
             }`
         );
@@ -136,23 +144,30 @@ export class VoiceControl {
             host: "https://translate.google.com",
         });
 
-        this.speakQueue = results.map((res) =>
-            createAudioResource("data:audio/ogg;base64," + res.base64, {
-                inputType: StreamType.OggOpus,
-            })
+        const initiated = !!this.speakQueue.length;
+
+        this.speakQueue = this.speakQueue.concat(
+            results.map((res) =>
+                createAudioResource("data:audio/ogg;base64," + res.base64, {
+                    inputType: StreamType.OggOpus,
+                })
+            )
         );
 
-        this.player.play(this.speakQueue[0]);
-        this.speakQueue.shift();
+        if (!initiated) this.player.play(this.speakQueue.shift()!);
 
-        this.player.on(
-            AudioPlayerStatus.Idle,
-            (() => {
-                if (this.speakQueue.length) {
-                    this.player.play(this.speakQueue.shift()!);
-                }
-            }).bind(this)
-        );
+        return new Promise((resolve, reject) => {
+            this.player.on(
+                AudioPlayerStatus.Idle,
+                (() => {
+                    if (this.speakQueue.length) {
+                        this.player.play(this.speakQueue.shift()!);
+                    } else {
+                        resolve(true);
+                    }
+                }).bind(this)
+            );
+        });
     }
 
     async playSong(url: string) {

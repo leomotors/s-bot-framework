@@ -120,6 +120,8 @@ export class SBotClient {
     private response(msg: Message) {
         if (msg.author.id == this.client.user?.id) return;
 
+        if (msg.author.bot) return;
+
         Logger.log(`Recieved Message from ${msg.author.tag}: ${msg.content}`);
 
         if (this.voiceOptions?.jutsu == "SOnDemand") {
@@ -163,7 +165,7 @@ export class SBotClient {
         this.utility.loader.push(loader);
     }
 
-    // * VOICE CONTROL SECTION
+    /// * VOICE CONTROL SECTION ///
 
     voiceOptions?: VoiceOptions;
     voiceCtrl?: VoiceControl;
@@ -175,14 +177,19 @@ export class SBotClient {
     async ttsJutsu(msg: Message, content: string) {
         if (!this.voiceOptions?.jutsu) return;
 
-        if (!this.voiceCtrl?.isSameChannel(msg.member?.voice.channel)) {
-            return;
-        }
-
         if (this.voiceOptions.jutsu == "SOnDemand") {
+            if (!this.voiceCtrl?.isSameChannel(msg.member?.voice.channel)) {
+                return;
+            }
             if (this.voiceCtrl) {
                 this.voiceCtrl.speak(content);
+                return;
             }
+        }
+
+        if (this.voiceOptions.jutsu == "CorgiSwift") {
+            this.corgiSwiftJutsu(msg, content);
+            return;
         }
     }
 
@@ -196,7 +203,7 @@ export class SBotClient {
                     this.voiceCtrl = undefined;
                 }).bind(this)
             );
-            await this.voiceCtrl.waitTillReady();
+            await this.voiceCtrl.waitTillReady("SOD Mode");
             if (voiceOptions.onJoin) {
                 await this.voiceCtrl.speak(voiceOptions.onJoin);
             }
@@ -239,11 +246,63 @@ export class SBotClient {
             return;
         }
     }
+
+    private corgiSwiftQueue: { msg: Message; content: string }[] = [];
+    async corgiSwiftJutsu(msg: Message, content: string) {
+        if (VoiceControl.validateUser(msg)) return;
+
+        const notRunning = !this.corgiSwiftQueue.length;
+
+        this.corgiSwiftQueue.push({ msg, content });
+        if (notRunning) this.corgiSwiftClearQueue();
+    }
+
+    private async corgiSwiftClearQueue() {
+        if (!this.corgiSwiftQueue.length) return;
+
+        const { msg } = this.corgiSwiftQueue[0];
+
+        if (!msg.member?.voice.channel) {
+            // * Maybe users also have another Jutsu
+            this.corgiSwiftQueue.shift();
+            this.corgiSwiftClearQueue();
+            return;
+        }
+
+        try {
+            this.voiceCtrl = new VoiceControl(
+                msg,
+                (() => {
+                    this.voiceCtrl = undefined;
+                }).bind(this)
+            );
+            await this.voiceCtrl.waitTillReady("CorgiSwift術 Mode");
+
+            while (this.corgiSwiftQueue.length) {
+                const words = this.corgiSwiftQueue[0];
+                if (
+                    this.voiceCtrl.isSameChannel(
+                        words.msg.member?.voice.channel
+                    )
+                ) {
+                    await this.voiceCtrl.speak(words.content);
+                    this.corgiSwiftQueue.shift();
+                } else {
+                    this.voiceCtrl.destruct();
+                    this.corgiSwiftClearQueue();
+                    return;
+                }
+            }
+
+            this.voiceCtrl?.destruct();
+        } catch (err) {
+            Logger.log(`CorgiSwift術 Failed: ${err}`);
+        }
+    }
 }
 
 interface CorgiSwiftJutsu {
     jutsu: "CorgiSwift";
-    fallback?: {};
 }
 
 interface SOnDemand {
