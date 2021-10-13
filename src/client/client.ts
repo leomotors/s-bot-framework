@@ -70,6 +70,7 @@ export class SBotClient {
             loader: [],
         };
 
+        // TODO Allow disabling Log to files
         Logger.startFile();
 
         const {
@@ -185,6 +186,7 @@ export class SBotClient {
         }
     }
 
+    // TODO Check if already joined
     async sodJoin(msg: Message) {
         const voiceOptions = this.voiceOptions! as SOnDemand;
         try {

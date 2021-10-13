@@ -8,6 +8,7 @@ import {
     entersState,
     getVoiceConnection,
     joinVoiceChannel,
+    StreamType,
     VoiceConnectionStatus,
 } from "@discordjs/voice";
 
@@ -17,6 +18,7 @@ import { getAllAudioBase64 } from "google-tts-api";
 import ytdl from "ytdl-core";
 
 import { sLogger } from "../logger";
+import { shorten } from "../utils/string";
 
 export enum VoiceValidateResult {
     OK = 0,
@@ -67,6 +69,8 @@ export class VoiceControl {
             selfMute: false,
         });
 
+        connection.subscribe(this.player);
+
         // * https://discordjs.guide/voice/voice-connections.html#handling-disconnects
         connection.on(
             VoiceConnectionStatus.Disconnected,
@@ -105,6 +109,10 @@ export class VoiceControl {
         if (!connection) return false;
         try {
             await entersState(connection, VoiceConnectionStatus.Ready, 5000);
+            sLogger.log(
+                `Successfully joined ${this.channelName} as SOD Mode`,
+                "SUCCESS"
+            );
             return true;
         } catch (err) {
             sLogger.log(`Error joining ${this.channelName} : ${err}`, "ERROR");
@@ -115,6 +123,12 @@ export class VoiceControl {
     private speakQueue: AudioResource<any>[] = [];
 
     async speak(content: string) {
+        sLogger.log(
+            `[TTS] Started Speaking ${shorten(content, 20)} to ${
+                this.channelName
+            }`
+        );
+
         // TODO Optimize by getAllAudioUrl then get each Audio async
         const results = await getAllAudioBase64(content, {
             lang: "th",
@@ -122,9 +136,14 @@ export class VoiceControl {
             host: "https://translate.google.com",
         });
 
-        this.speakQueue = results.map((res) => createAudioResource(res.base64));
+        this.speakQueue = results.map((res) =>
+            createAudioResource("data:audio/ogg;base64," + res.base64, {
+                inputType: StreamType.OggOpus,
+            })
+        );
 
         this.player.play(this.speakQueue[0]);
+        this.speakQueue.shift();
 
         this.player.on(
             AudioPlayerStatus.Idle,

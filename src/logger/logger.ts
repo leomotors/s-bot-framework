@@ -18,8 +18,9 @@ export abstract class sLogger {
         try {
             await fs.writeFile(
                 actual_path,
-                `Created at ${getFormattedTime()}
-                Framework Version: ${FrameworkVersion}\n\n`
+                `Created at ${getFormattedTime()}\n` +
+                    `Bot Version: ${process.env.npm_package_version}` +
+                    `Framework Version: ${FrameworkVersion}\n\n`
             );
             sLogger.file_status = true;
         } catch (err) {
