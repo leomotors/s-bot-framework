@@ -167,14 +167,14 @@ export class SBotClient {
 
     /// * VOICE CONTROL SECTION ///
 
-    voiceOptions?: VoiceOptions;
-    voiceCtrl?: VoiceControl;
+    private voiceOptions?: VoiceOptions;
+    private voiceCtrl?: VoiceControl;
 
     useVoice(options: VoiceOptions) {
         this.voiceOptions = options;
     }
 
-    async ttsJutsu(msg: Message, content: string) {
+    private async ttsJutsu(msg: Message, content: string) {
         if (!this.voiceOptions?.jutsu) return;
 
         if (this.voiceOptions.jutsu == "SOnDemand") {
@@ -194,7 +194,7 @@ export class SBotClient {
     }
 
     // TODO Check if already joined
-    async sodJoin(msg: Message) {
+    private async sodJoin(msg: Message) {
         const voiceOptions = this.voiceOptions! as SOnDemand;
         try {
             this.voiceCtrl = new VoiceControl(
@@ -229,7 +229,7 @@ export class SBotClient {
         }
     }
 
-    async sodLeave(msg: Message) {
+    private async sodLeave(msg: Message) {
         const voiceOptions = this.voiceOptions! as SOnDemand;
 
         if (
@@ -248,7 +248,7 @@ export class SBotClient {
     }
 
     private corgiSwiftQueue: { msg: Message; content: string }[] = [];
-    async corgiSwiftJutsu(msg: Message, content: string) {
+    private async corgiSwiftJutsu(msg: Message, content: string) {
         if (VoiceControl.validateUser(msg)) return;
 
         const notRunning = !this.corgiSwiftQueue.length;
