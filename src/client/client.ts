@@ -7,9 +7,10 @@ import { sLogger as Logger } from "../logger/logger";
 import { Response } from "../response/response";
 import { Console } from "../console/console";
 import { DataLoader } from "../data";
-import { Voice } from "../voice/voice";
 
 import { Version as FrameworkVersion } from "../config";
+import { VoiceControl, VoiceValidateResult } from "../voice";
+import { checkPrefix } from "../utils/string";
 
 export interface MessageResponse {
     message: string;
@@ -120,9 +121,13 @@ export class SBotClient {
 
         Logger.log(`Recieved Message from ${msg.author.tag}: ${msg.content}`);
 
-        if (this.ttsOptions && !this.ttsOptions.express) {
-            if (msg.content.toLowerCase().startsWith(this.ttsOptions.prefix)) {
-                this.pursueUser(msg);
+        if (this.voiceOptions?.jutsu == "SOnDemand") {
+            if (checkPrefix(msg.content, this.voiceOptions.prefix.join)) {
+                this.sodJoin(msg);
+                return;
+            }
+            if (checkPrefix(msg.content, this.voiceOptions.prefix.leave)) {
+                this.sodLeave(msg);
                 return;
             }
         }
@@ -134,6 +139,7 @@ export class SBotClient {
                     if (reply.react) msg.react(reply.react);
                     if (reply.reply) msg.reply(reply.message);
                     else msg.channel.send(reply.message);
+                    if (reply.audio) this.ttsJutsu(msg, reply.message);
                     Logger.log(
                         `Replied ${msg.author.tag} with ${reply.message}`
                     );
@@ -156,22 +162,116 @@ export class SBotClient {
         this.utility.loader.push(loader);
     }
 
-    // * VOICE SECTION
+    // * VOICE CONTROL SECTION
 
-    private voice?: Voice;
-    private ttsOptions?: InnerTTSOptions;
+    voiceOptions?: VoiceOptions;
+    voiceCtrl?: VoiceControl;
 
-    useTTS(Options: TTSOptions) {
-        this.ttsOptions = {
-            prefix: Options.prefix ?? "__NOT_AVAILABLE__",
-            express: !Options.prefix,
-            onJoin: Options.onJoin,
-        };
+    useVoice(options: VoiceOptions) {
+        this.voiceOptions = options;
     }
 
-    async pursueUser(msg: Message) {
-        this.voice = new Voice(msg);
-        const result = await this.voice.waitTillReady();
-        if (!result) this.voice = undefined;
+    async ttsJutsu(msg: Message, content: string) {
+        if (!this.voiceOptions?.jutsu) return;
+
+        if (!this.voiceCtrl?.isSameChannel(msg.member?.voice.channel)) {
+            return;
+        }
+
+        if (this.voiceOptions.jutsu == "SOnDemand") {
+            if (this.voiceCtrl) {
+                this.voiceCtrl.speak(content);
+            }
+        }
+    }
+
+    async sodJoin(msg: Message) {
+        const voiceOptions = this.voiceOptions! as SOnDemand;
+        try {
+            this.voiceCtrl = new VoiceControl(
+                msg,
+                (() => {
+                    this.voiceCtrl = undefined;
+                }).bind(this)
+            );
+            await this.voiceCtrl.waitTillReady();
+            if (voiceOptions.onJoin) {
+                await this.voiceCtrl.speak(voiceOptions.onJoin);
+            }
+        } catch (err) {
+            if (voiceOptions.fallback?.join_fail?.message) {
+                const message = (() => {
+                    const messages = voiceOptions.fallback.join_fail.message;
+                    switch (err) {
+                        case VoiceValidateResult.NO_CHANNEL:
+                            return messages.no_channel;
+                        case VoiceValidateResult.STAGE_CHANNEL:
+                            return messages.stage_channel;
+                        default:
+                            return messages.internal;
+                    }
+                })();
+
+                if (!message) return;
+
+                if (voiceOptions.fallback.join_fail.reply) msg.reply(message);
+                else msg.channel.send(message);
+            }
+        }
+    }
+
+    async sodLeave(msg: Message) {
+        const voiceOptions = this.voiceOptions! as SOnDemand;
+
+        if (
+            !this.voiceCtrl?.isSameChannel(msg.member?.voice.channel) &&
+            voiceOptions.rules?.onsite_leave
+        ) {
+            const message = voiceOptions.fallback?.onsite_leave?.message;
+            if (message) {
+                if (voiceOptions.fallback?.onsite_leave?.reply)
+                    msg.reply(message);
+                else msg.channel.send(message);
+            }
+
+            return;
+        }
     }
 }
+
+interface CorgiSwiftJutsu {
+    jutsu: "CorgiSwift";
+    fallback?: {};
+}
+
+interface SOnDemand {
+    jutsu: "SOnDemand";
+    prefix: {
+        join: string[];
+        leave: string[];
+    };
+    onJoin?: string;
+    fallback?: {
+        join_fail?: {
+            message?: {
+                no_channel?: string;
+                stage_channel?: string;
+                internal?: string;
+            };
+            reply?: boolean;
+        };
+        already_join?: {
+            message?: string;
+            reply?: boolean;
+        };
+        onsite_leave?: {
+            message?: string;
+            reply?: boolean;
+        };
+    };
+    rules?: {
+        onsite_leave: boolean;
+    };
+}
+
+export type VoiceOptions = CorgiSwiftJutsu | SOnDemand;
