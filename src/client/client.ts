@@ -6,32 +6,26 @@ dotenv.config();
 import { sLogger as Logger } from "../logger/logger";
 import { Response } from "../response/response";
 import { Console } from "../console/console";
-import { DataLoader } from "../data";
+import { SOnDemand, VoiceOptions, DJOptions, SongOptions } from "./clientVoice";
 
 import { Version as FrameworkVersion } from "../config";
 import { VoiceControl, VoiceValidateResult } from "../voice";
 import { checkPrefix } from "../utils/string";
+import { ActivityLoader } from "../data/activityLoader";
 
 export interface MessageResponse {
     message: string;
     react?: string;
     reply?: boolean;
     audio?: boolean;
+    refIndex: string;
 }
 
 export interface SBotOptions {
     token?: string;
     activityRefreshInterval?: number;
-}
-export interface TTSOptions {
-    prefix?: string;
-    onJoin?: string;
-}
-
-interface InnerTTSOptions {
-    express: boolean;
-    prefix: string;
-    onJoin?: string;
+    logLocation?: string | null;
+    ignorePrivacy?: boolean;
 }
 
 export class SBotClient {
@@ -43,7 +37,7 @@ export class SBotClient {
     private utility: {
         response: Response[];
         console?: Console;
-        loader: DataLoader[];
+        activityLoader?: ActivityLoader;
     };
 
     constructor(options?: SBotOptions) {
@@ -56,6 +50,7 @@ export class SBotClient {
                 Intents.FLAGS.DIRECT_MESSAGES,
                 Intents.FLAGS.DIRECT_MESSAGE_REACTIONS,
             ],
+            partials: ["CHANNEL"],
         });
 
         console.log(
@@ -67,16 +62,15 @@ export class SBotClient {
         // * Initialize Utility Classes
         this.utility = {
             response: [],
-            loader: [],
         };
-
-        // TODO Allow disabling Log to files
-        Logger.startFile();
 
         const {
             token = process.env.DISCORD_TOKEN,
-            activityRefreshInterval = 300,
+            activityRefreshInterval = 120,
+            logLocation,
         } = options ?? {};
+
+        Logger.startFile(logLocation);
 
         this.client.on("ready", () => {
             Logger.log(
@@ -89,27 +83,49 @@ export class SBotClient {
 
         this.client.login(token);
 
-        setInterval(() => {
-            this.setSelfActivity();
-        }, activityRefreshInterval * 1000);
+        setInterval(
+            (() => {
+                this.setSelfActivity();
+            }).bind(this),
+            activityRefreshInterval * 1000
+        );
 
         this.client.on("messageCreate", this.response.bind(this));
     }
 
-    private state: {
-        activity?: ActivityOptions;
+    private props: {
+        computedActivity?: ActivityOptions;
     } = {};
 
-    useActivity(activity: ActivityOptions) {
+    useComputedActivity(activity: ActivityOptions) {
         const { type, name = "" } = activity;
-        this.state.activity = activity;
+        this.props.computedActivity = activity;
         this.client.user?.setActivity(name, { type, name });
     }
 
-    private setSelfActivity() {
-        if (!this.state.activity) return;
-        const { type, name = "" } = this.state.activity;
-        this.client.user?.setActivity(name, { type, name });
+    useActivities(loader: ActivityLoader) {
+        this.utility.activityLoader = loader;
+    }
+
+    private setSelfActivity(index?: number) {
+        const loader = this.utility.activityLoader;
+        if (!this.props.computedActivity && !loader?.length) return;
+
+        if (index === undefined) {
+            index = Math.floor(
+                Math.random() *
+                    (Number(!!loader?.length) +
+                        Number(!!this.utility.activityLoader))
+            );
+        }
+
+        const selectedActivity =
+            loader?.getData()[index] ?? this.props.computedActivity;
+
+        if (selectedActivity) {
+            const { type, name = "" } = selectedActivity;
+            this.client.user?.setActivity(name, { type, name });
+        }
     }
 
     useResponse(response: Response) {
@@ -124,6 +140,7 @@ export class SBotClient {
 
         Logger.log(`Recieved Message from ${msg.author.tag}: ${msg.content}`);
 
+        // * SOnDemand Only Part
         if (this.voiceOptions?.jutsu == "SOnDemand") {
             if (checkPrefix(msg.content, this.voiceOptions.prefix.join)) {
                 this.sodJoin(msg);
@@ -135,6 +152,16 @@ export class SBotClient {
             }
         }
 
+        // * DJ Part
+        if (
+            this.djOptions &&
+            checkPrefix(msg.content, this.djOptions.prefixes)
+        ) {
+            this.playMusic(msg);
+            return;
+        }
+
+        // * Registered Response Part
         for (const response of this.utility.response) {
             if (response.isTrigger(msg.content)) {
                 const reply = response.getReply();
@@ -143,8 +170,12 @@ export class SBotClient {
                     if (reply.reply) msg.reply(reply.message);
                     else msg.channel.send(reply.message);
                     if (reply.audio) this.ttsJutsu(msg, reply.message);
+
+                    const refInd = reply.refIndex;
                     Logger.log(
-                        `Replied ${msg.author.tag} with ${reply.message}`
+                        `Replied ${msg.author.tag} with ${reply.message}${
+                            refInd ? ` (${refInd})` : ""
+                        }`
                     );
                 } catch (err) {
                     Logger.log(
@@ -159,10 +190,6 @@ export class SBotClient {
 
     useConsole(console: Console) {
         this.utility.console = console;
-    }
-
-    useDataLoader(loader: DataLoader) {
-        this.utility.loader.push(loader);
     }
 
     /// * VOICE CONTROL SECTION ///
@@ -216,6 +243,8 @@ export class SBotClient {
                             return messages.no_channel;
                         case VoiceValidateResult.STAGE_CHANNEL:
                             return messages.stage_channel;
+                        case VoiceValidateResult.NOT_JOINABLE:
+                            return messages.not_joinable;
                         default:
                             return messages.internal;
                     }
@@ -245,6 +274,8 @@ export class SBotClient {
 
             return;
         }
+
+        this.voiceCtrl?.destruct();
     }
 
     private corgiSwiftQueue: { msg: Message; content: string }[] = [];
@@ -262,8 +293,9 @@ export class SBotClient {
 
         const { msg } = this.corgiSwiftQueue[0];
 
-        if (!msg.member?.voice.channel) {
-            // * Maybe users also have another Jutsu
+        const targetVoiceChannel = msg.member?.voice.channel;
+        if (!targetVoiceChannel?.joinable) {
+            // * Users no longer in VC or VC is not joinable
             this.corgiSwiftQueue.shift();
             this.corgiSwiftClearQueue();
             return;
@@ -297,42 +329,22 @@ export class SBotClient {
             this.voiceCtrl?.destruct();
         } catch (err) {
             Logger.log(`CorgiSwift術 Failed: ${err}`);
+            this.voiceCtrl?.destruct();
+            this.corgiSwiftQueue.shift();
+            this.corgiSwiftClearQueue();
         }
     }
-}
 
-interface CorgiSwiftJutsu {
-    jutsu: "CorgiSwift";
-}
+    /// * MUSIC SECTION * ///
 
-interface SOnDemand {
-    jutsu: "SOnDemand";
-    prefix: {
-        join: string[];
-        leave: string[];
-    };
-    onJoin?: string;
-    fallback?: {
-        join_fail?: {
-            message?: {
-                no_channel?: string;
-                stage_channel?: string;
-                internal?: string;
-            };
-            reply?: boolean;
-        };
-        already_join?: {
-            message?: string;
-            reply?: boolean;
-        };
-        onsite_leave?: {
-            message?: string;
-            reply?: boolean;
-        };
-    };
-    rules?: {
-        onsite_leave: boolean;
-    };
-}
+    private songOptions?: SongOptions[];
+    private djOptions?: DJOptions;
+    useDJ(SongOptions: SongOptions[], Options: DJOptions) {
+        this.songOptions = SongOptions;
+        this.djOptions = Options;
+    }
 
-export type VoiceOptions = CorgiSwiftJutsu | SOnDemand;
+    async playMusic(msg: Message) {
+        // TODO
+    }
+}

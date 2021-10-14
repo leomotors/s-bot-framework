@@ -19,4 +19,20 @@ export class MultiLoader extends StringLoader {
             data = data.concat(loaderOption.loader.getData());
         return data;
     }
+
+    override getRefIndex(index: number) {
+        let ldIndex = 0;
+        let ldC = 0;
+
+        for (const loaderOption of this.loaders) {
+            ldIndex += 1;
+            ldC += loaderOption.loader.length;
+            if (ldC > index) {
+                ldIndex -= 1;
+                ldC -= loaderOption.loader.length;
+            }
+        }
+
+        return `${this.loaders[ldIndex]?.label} #${index - ldC + 1}`;
+    }
 }

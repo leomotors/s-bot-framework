@@ -1,6 +1,6 @@
 {
   "name": "s-bot-framework",
-  "version": "1.0.0-pre.8",
+  "version": "1.0.0-pre.12",
   "description": "Discord Bot Framework built for Salim Bot but also applicable for other uses",
   "main": "dist/index.js",
   "types": "dist",
@@ -20,6 +20,13 @@
     "url": "https://github.com/Leomotors/s-bot-framework/issues"
   },
   "homepage": "https://github.com/Leomotors/s-bot-framework#readme",
+  "keywords": [
+    "npm-package",
+    "discord-bot",
+    "discord-bot-framework",
+    "salim",
+    "salim-bot"
+  ],
   "dependencies": {
     "@discordjs/opus": "^0.6.0",
     "@discordjs/voice": "0.6.0",
@@ -29,12 +36,13 @@
     "google-tts-api": "^2.0.2",
     "libsodium-wrappers": "^0.7.9",
     "node-fetch": "^3.0.0",
+    "strip-ansi": "^7.0.1",
     "ytdl-core": "^4.9.1"
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^4.33.0",
-    "@typescript-eslint/parser": "^4.33.0",
-    "eslint": "^8.0.0",
+    "@typescript-eslint/eslint-plugin": "^5.0.0",
+    "@typescript-eslint/parser": "^5.0.0",
+    "eslint": "^8.0.1",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^4.0.0",
     "leomotors-automation": "^1.0.1",

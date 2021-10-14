@@ -2,7 +2,7 @@ import { Loader } from "../loader";
 
 export type transformFunction = (t: any) => string;
 
-export abstract class StringLoader extends Loader {
+export abstract class StringLoader extends Loader<string> {
     protected data: string[] = [];
     private transform?: transformFunction;
 
@@ -12,10 +12,6 @@ export abstract class StringLoader extends Loader {
     }
 
     async loadData() {}
-
-    getData(): string[] {
-        return this.data;
-    }
 
     mapTransform(datas: any[]): string[] {
         if (!this.transform) return datas;

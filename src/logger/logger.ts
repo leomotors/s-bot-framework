@@ -2,6 +2,7 @@ import { getFormattedTime } from "./time";
 
 import fs from "fs/promises";
 import chalk from "chalk";
+import stripAnsi from "strip-ansi";
 
 import { Version as FrameworkVersion } from "../config";
 
@@ -11,7 +12,14 @@ export abstract class sLogger {
     private static file_path: string;
     private static file_status = false;
 
-    static async startFile(file_path = "log") {
+    static async startFile(file_path: string | undefined | null) {
+        if (file_path === null) {
+            sLogger.file_status = false;
+            return;
+        } else if (file_path === undefined) {
+            file_path = "log";
+        }
+
         const actual_path = `${file_path}/${getFormattedTime(true)}.txt`;
         sLogger.file_path = actual_path;
 
@@ -19,7 +27,7 @@ export abstract class sLogger {
             await fs.writeFile(
                 actual_path,
                 `Created at ${getFormattedTime()}\n` +
-                    `Bot Version: ${process.env.npm_package_version}` +
+                    `Bot Version: ${process.env.npm_package_version}\n` +
                     `Framework Version: ${FrameworkVersion}\n\n`
             );
             sLogger.file_status = true;
@@ -41,9 +49,8 @@ export abstract class sLogger {
             showTime ? `[${getFormattedTime()}] ` : ""
         }${message}`;
 
-        if (this.file_status) {
-            await fs.appendFile(this.file_path, logmsg + "\n");
-        }
+        if (sLogger.file_status)
+            fs.appendFile(sLogger.file_path, stripAnsi(logmsg) + "\n");
 
         if (status == "NORMAL") console.log(logmsg);
         else if (status == "WARNING") console.log(chalk.yellow(logmsg));

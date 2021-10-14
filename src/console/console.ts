@@ -32,8 +32,8 @@ export class Console {
         }
     }
 
-    private loaders: Loader[] = [];
-    addLoader(...args: Loader[]) {
+    private loaders: Loader<any>[] = [];
+    addLoader(...args: Loader<any>[]) {
         this.loaders.push(...args);
     }
 }

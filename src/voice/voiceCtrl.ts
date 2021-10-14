@@ -16,7 +16,7 @@ import { Message, StageChannel, VoiceChannel } from "discord.js";
 
 import chalk from "chalk";
 
-import { getAllAudioBase64 } from "google-tts-api";
+import { getAllAudioUrls } from "google-tts-api";
 import ytdl from "ytdl-core";
 
 import { sLogger } from "../logger";
@@ -26,6 +26,7 @@ export enum VoiceValidateResult {
     OK = 0,
     NO_CHANNEL = 1,
     STAGE_CHANNEL = 2,
+    NOT_JOINABLE = 3,
 }
 
 export class VoiceControl {
@@ -34,6 +35,8 @@ export class VoiceControl {
     private guildID: string;
     private channelName: string;
     private voiceChannelID: string;
+
+    private songRunning = false;
 
     isSameChannel(channel?: VoiceChannel | StageChannel | null) {
         return channel?.id == this.voiceChannelID;
@@ -48,6 +51,8 @@ export class VoiceControl {
         // * This Bot doesn't support Stage Channel
         if (channel instanceof StageChannel)
             return VoiceValidateResult.STAGE_CHANNEL;
+
+        if (!channel.joinable) return VoiceValidateResult.NOT_JOINABLE;
 
         return VoiceValidateResult.OK;
     }
@@ -137,18 +142,16 @@ export class VoiceControl {
             }`
         );
 
-        // TODO Optimize by getAllAudioUrl then get each Audio async
-        const results = await getAllAudioBase64(content, {
+        const results = getAllAudioUrls(content, {
             lang: "th",
             slow: false,
-            host: "https://translate.google.com",
         });
 
         const initiated = !!this.speakQueue.length;
 
         this.speakQueue = this.speakQueue.concat(
             results.map((res) =>
-                createAudioResource("data:audio/ogg;base64," + res.base64, {
+                createAudioResource(res.url, {
                     inputType: StreamType.OggOpus,
                 })
             )
@@ -156,7 +159,7 @@ export class VoiceControl {
 
         if (!initiated) this.player.play(this.speakQueue.shift()!);
 
-        return new Promise((resolve, reject) => {
+        return new Promise<true>((resolve, reject) => {
             this.player.on(
                 AudioPlayerStatus.Idle,
                 (() => {
@@ -171,13 +174,24 @@ export class VoiceControl {
     }
 
     async playSong(url: string) {
-        // https://stackoverflow.com/questions/63199238/discord-js-ytdl-error-input-stream-status-code-416
-        const musicStream = ytdl(url, {
-            quality: "highestaudio",
-            highWaterMark: 1 << 25,
-        });
+        try {
+            // https://stackoverflow.com/questions/63199238/discord-js-ytdl-error-input-stream-status-code-416
+            const musicStream = ytdl(url, {
+                quality: "highestaudio",
+                highWaterMark: 1 << 25,
+            });
 
-        const musicRc = createAudioResource(musicStream);
-        this.player.play(musicRc);
+            const musicRc = createAudioResource(musicStream);
+            this.player.play(musicRc);
+            this.songRunning = true;
+            this.player.on(
+                AudioPlayerStatus.Idle,
+                (() => {
+                    this.songRunning = false;
+                }).bind(this)
+            );
+        } catch (err) {
+            sLogger.log(`Error playing Song: ${err}`, "ERROR");
+        }
     }
 }

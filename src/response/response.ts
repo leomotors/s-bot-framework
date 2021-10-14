@@ -36,7 +36,7 @@ export class Response {
         return this.triggeredKeyword;
     }
 
-    private returnedItem?: { index: number; data: string };
+    private returnedItem?: { refIndex: string; data: string };
     get lastReturned() {
         return this.returnedItem;
     }
@@ -94,9 +94,10 @@ export class Response {
             this.response.loader.getData().length * Math.random()
         );
         let selectedData = data[selectedIndex];
+        let refIndex = this.response.loader.getRefIndex(selectedIndex);
 
         this.returnedItem = {
-            index: selectedIndex,
+            refIndex,
             data: selectedData,
         };
 
@@ -105,6 +106,7 @@ export class Response {
             react: this.response.react,
             reply: this.response.reply,
             audio: this.response.audio,
+            refIndex,
         };
     }
 }
