@@ -3,6 +3,7 @@ import fs from "fs/promises";
 
 import { Loader } from "./loader";
 import { sLogger } from "../logger";
+import { timems } from "../utils";
 
 export class ActivityLoader extends Loader<ActivityOptions> {
     private data_path: string;
@@ -18,11 +19,14 @@ export class ActivityLoader extends Loader<ActivityOptions> {
 
     override async loadData() {
         try {
+            const start = performance.now();
             const buffer = await fs.readFile(this.data_path);
             const obj = JSON.parse(buffer.toString());
             this.data = this.data_key ? obj[this.data_key] : obj;
             sLogger.log(
-                `Successfully fetched ${this.data.length} activites from ${this.data_path}`,
+                `Successfully fetched ${this.data.length} activites from ${
+                    this.data_path
+                } in ${timems(start)}`,
                 "SUCCESS"
             );
         } catch (err) {

@@ -45,10 +45,13 @@ export enum SongAppearance {
 
 export interface SongOptions {
     loader: SongLoader;
-    label: string;
+    category: string;
     appearance: SongAppearance;
+    onPlay: string;
 }
 
 export interface DJOptions {
     prefixes: string[];
+    random_only?: boolean;
+    reply?: boolean;
 }

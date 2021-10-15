@@ -3,7 +3,8 @@ export function trim(str: string): string {
 }
 
 export function checkPrefix(main: string, prefixes: string[]): boolean {
-    for (const prefix of prefixes) if (main.startsWith(prefix)) return true;
+    for (const prefix of prefixes)
+        if (trim(main).startsWith(trim(prefix))) return true;
     return false;
 }
 

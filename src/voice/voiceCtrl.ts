@@ -173,7 +173,7 @@ export class VoiceControl {
         });
     }
 
-    async playSong(url: string) {
+    async playSong(url: string, title?: string) {
         try {
             // https://stackoverflow.com/questions/63199238/discord-js-ytdl-error-input-stream-status-code-416
             const musicStream = ytdl(url, {
@@ -184,14 +184,18 @@ export class VoiceControl {
             const musicRc = createAudioResource(musicStream);
             this.player.play(musicRc);
             this.songRunning = true;
-            this.player.on(
-                AudioPlayerStatus.Idle,
-                (() => {
-                    this.songRunning = false;
-                }).bind(this)
-            );
+
+            return new Promise<boolean>((resolve, reject) => {
+                this.player.on(
+                    AudioPlayerStatus.Idle,
+                    (() => {
+                        this.songRunning = false;
+                        resolve(true);
+                    }).bind(this)
+                );
+            });
         } catch (err) {
-            sLogger.log(`Error playing Song: ${err}`, "ERROR");
+            sLogger.log(`Error playing ${title ?? url}: ${err}`, "ERROR");
         }
     }
 }

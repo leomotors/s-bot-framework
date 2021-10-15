@@ -1,6 +1,7 @@
 import fs from "fs/promises";
 import { StringLoader, transformFunction } from "./stringLoader";
 import { sLogger } from "../../logger";
+import { timems } from "../../utils";
 
 export class DataLoader extends StringLoader {
     private data_path: string;
@@ -20,13 +21,16 @@ export class DataLoader extends StringLoader {
 
     override async loadData() {
         try {
+            const start = performance.now();
             const buffer = await fs.readFile(this.data_path);
             const obj = JSON.parse(buffer.toString());
             this.data = this.mapTransform(
                 this.data_key ? obj[this.data_key] : obj
             );
             sLogger.log(
-                `Successfully fetched ${this.data.length} datas from ${this.data_path}`,
+                `Successfully fetched ${this.data.length} datas from ${
+                    this.data_path
+                } in ${timems(start)}`,
                 "SUCCESS"
             );
         } catch (err) {

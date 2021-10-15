@@ -12,6 +12,8 @@ import { Version as FrameworkVersion } from "../config";
 import { VoiceControl, VoiceValidateResult } from "../voice";
 import { checkPrefix } from "../utils/string";
 import { ActivityLoader } from "../data/activityLoader";
+import { Song } from "../data/songLoader";
+import { lowerBoundLinear } from "../utils/algorithm";
 
 export interface MessageResponse {
     message: string;
@@ -157,7 +159,7 @@ export class SBotClient {
             this.djOptions &&
             checkPrefix(msg.content, this.djOptions.prefixes)
         ) {
-            this.playMusic(msg);
+            this.requestSong(msg);
             return;
         }
 
@@ -344,7 +346,55 @@ export class SBotClient {
         this.djOptions = Options;
     }
 
-    async playMusic(msg: Message) {
-        // TODO
+    async requestSong(msg: Message) {
+        let totalLength = 0;
+        const allSongs: Song[] = [];
+        const breakpoints = [0];
+        this.songOptions!.forEach((so) => {
+            totalLength += so.loader.length;
+            breakpoints.push(breakpoints.at(-1)! + so.loader.length);
+            allSongs.push(...so.loader.getData());
+        });
+
+        // TODO Add Search
+        const selectedIndex = Math.floor(Math.random() * totalLength);
+
+        const selectedSong = allSongs[selectedIndex];
+        const selectedCategory =
+            this.songOptions![lowerBoundLinear(breakpoints, selectedIndex)];
+        const category = selectedCategory.category;
+        const onPlay = selectedCategory.onPlay;
+
+        this.corgiPlaySong(msg, selectedSong, category);
+
+        const message = onPlay.replace(
+            "{song_name}",
+            selectedSong.name ?? "???"
+        );
+
+        if (this.djOptions!.reply) msg.reply(message);
+        else msg.channel.send(message);
+    }
+
+    // TODO Make Play Song compatible with SOD
+
+    private async corgiPlaySong(msg: Message, song: Song, category: string) {
+        try {
+            this.voiceCtrl = new VoiceControl(
+                msg,
+                (() => {
+                    this.voiceCtrl = undefined;
+                }).bind(this)
+            );
+            await this.voiceCtrl.waitTillReady("🎶🎶 DJCorgi Mode ✨💛");
+            Logger.log(
+                `[DJCorgi] Playing ${song.name} in category of ${category}`
+            );
+            await this.voiceCtrl.playSong(song.url, song.name);
+            this.voiceCtrl?.destruct();
+        } catch (err) {
+            Logger.log(`DJCorgi Music Deliwry Mission Failed: ${err}`);
+            this.voiceCtrl?.destruct();
+        }
     }
 }

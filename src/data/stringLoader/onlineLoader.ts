@@ -1,6 +1,7 @@
 import fetch from "node-fetch";
 import { StringLoader, transformFunction } from "./stringLoader";
 import { sLogger } from "../../logger";
+import { timems } from "../../utils";
 
 export class OnlineLoader extends StringLoader {
     private url: string;
@@ -16,6 +17,7 @@ export class OnlineLoader extends StringLoader {
 
     override async loadData() {
         try {
+            const start = performance.now();
             const res = await fetch(this.url);
             if (res.status >= 400) throw `Error ${res.status}`;
             const restxt = await res.text();
@@ -24,7 +26,9 @@ export class OnlineLoader extends StringLoader {
                 this.data_key ? obj[this.data_key] : obj
             );
             sLogger.log(
-                `Successfully fetched ${this.data.length} datas from ${this.url}`,
+                `Successfully fetched ${this.data.length} datas from ${
+                    this.url
+                } in ${timems(start)}`,
                 "SUCCESS"
             );
         } catch (err) {
