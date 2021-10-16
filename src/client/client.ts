@@ -174,6 +174,19 @@ export class SBotClient {
             return;
         }
 
+        if (this.voiceOptions?.skip) {
+            if (checkPrefix(msg.content, this.voiceOptions.skip.prefixes)) {
+                if (this.voiceCtrl) {
+                    this.voiceCtrl.forceSkip();
+                    this.voiceOptions.skip.react &&
+                        msg.react(this.voiceOptions.skip.react);
+                } else {
+                    this.voiceOptions.skip.fallback &&
+                        msg.reply(this.voiceOptions.skip.fallback);
+                }
+            }
+        }
+
         // * Registered Response Part
         for (const response of this.utility.response) {
             if (response.isTrigger(msg.content)) {
@@ -412,22 +425,29 @@ export class SBotClient {
         const category = selectedCategory.category;
         const onPlay = selectedCategory.onPlay;
 
-        this.corgiPlaySong(msg, selectedSong, category);
+        const isEmptyQueue = !this.corgiSwiftQueue.length;
+        this.corgiSwiftQueue.push({
+            msg,
+            type: "SONG",
+            song: selectedSong,
+            category,
+        });
 
-        const message = onPlay.replace(
-            "{song_name}",
-            selectedSong.name ?? "???"
-        );
+        let message = onPlay.replace("{song_name}", selectedSong.name ?? "???");
+        if (!isEmptyQueue) {
+            if (this.corgiSwiftQueue[0].type == "TTS")
+                message += ` ${this.djOptions!.onQueued.tts}`;
+            else message += ` ${this.djOptions!.onQueued.song}`;
+        }
 
         if (this.djOptions!.reply) msg.reply(message);
         else msg.channel.send(message);
+
+        if (isEmptyQueue) this.corgiSwiftClearQueue();
     }
 
     private async corgiPlaySong(msg: Message, song: Song, category: string) {
         try {
-            Logger.log(
-                `[DJCorgi] Playing ${song.name} in category of ${category}`
-            );
             await this.voiceCtrl!.playSong(song.url, song.name ?? "", category);
         } catch (err) {
             Logger.log(

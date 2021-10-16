@@ -12,7 +12,8 @@ export interface CorgiSwiftJutsu {
     };
     skip?: {
         prefixes: string[];
-        fallback: string;
+        fallback?: string;
+        react?: string;
     };
 }
 
@@ -67,6 +68,10 @@ export interface DJOptions {
     prefixes: string[];
     random_only?: boolean;
     reply?: boolean;
+    onQueued: {
+        tts: string;
+        song: string;
+    };
 }
 
 interface corgiQueueTTS {

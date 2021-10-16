@@ -26,7 +26,9 @@ All Features exists in this framework is feature that exists in Salim Bot, you c
 
 ## 📚 Documents
 
-Coming Soon!
+[TypeDoc](https://leomotors.github.io/s-bot-framework/)
+
+Guide Coming Soon! (*or may not come*)
 
 ## 📃 Example
 
