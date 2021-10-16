@@ -1,41 +1,54 @@
-import { SongLoader } from "../data/songLoader";
+import { Message } from "discord.js";
+import { Song, SongLoader } from "../data/songLoader";
 
 export interface CorgiSwiftJutsu {
     jutsu: "CorgiSwift";
-}
-
-export interface SOnDemand {
-    jutsu: "SOnDemand";
-    prefix: {
-        join: string[];
-        leave: string[];
-    };
-    onJoin?: string;
     fallback?: {
-        join_fail?: {
-            message?: {
-                no_channel?: string;
-                stage_channel?: string;
-                not_joinable?: string;
-                internal?: string;
-            };
-            reply?: boolean;
-        };
-        already_join?: {
-            message?: string;
-            reply?: boolean;
-        };
-        onsite_leave?: {
-            message?: string;
-            reply?: boolean;
-        };
+        no_channel?: string;
+        stage_channel?: string;
+        not_joinable?: string;
+        internal?: string;
+        reply?: boolean;
     };
-    rules?: {
-        onsite_leave: boolean;
+    skip?: {
+        prefixes: string[];
+        fallback: string;
     };
 }
 
-export type VoiceOptions = CorgiSwiftJutsu | SOnDemand;
+// ! Deprecated Method
+// export interface SOnDemand {
+//     jutsu: "SOnDemand";
+//     prefix: {
+//         join: string[];
+//         leave: string[];
+//     };
+//     onJoin?: string;
+//     fallback?: {
+//         join_fail?: {
+//             message?: {
+//                 no_channel?: string;
+//                 stage_channel?: string;
+//                 not_joinable?: string;
+//                 internal?: string;
+//             };
+//             reply?: boolean;
+//         };
+//         already_join?: {
+//             message?: string;
+//             reply?: boolean;
+//         };
+//         onsite_leave?: {
+//             message?: string;
+//             reply?: boolean;
+//         };
+//     };
+//     rules?: {
+//         onsite_leave: boolean;
+//     };
+// }
+
+export type VoiceOptions = CorgiSwiftJutsu /* | SOnDemand*/;
 
 export enum SongAppearance {
     EVERYWHERE = 0,
@@ -55,3 +68,18 @@ export interface DJOptions {
     random_only?: boolean;
     reply?: boolean;
 }
+
+interface corgiQueueTTS {
+    msg: Message;
+    type: "TTS";
+    content: string;
+}
+
+interface corgiQueueSong {
+    msg: Message;
+    type: "SONG";
+    song: Song;
+    category: string;
+}
+
+export type corgiQueue = corgiQueueTTS | corgiQueueSong;

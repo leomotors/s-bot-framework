@@ -6,7 +6,11 @@ dotenv.config();
 import { sLogger as Logger } from "../logger/logger";
 import { Response } from "../response/response";
 import { Console } from "../console/console";
-import { SOnDemand, VoiceOptions, DJOptions, SongOptions } from "./clientVoice";
+import {
+    /*SOnDemand,*/ VoiceOptions,
+    DJOptions,
+    SongOptions,
+} from "./clientVoice";
 
 import { Version as FrameworkVersion } from "../config";
 import { VoiceControl, VoiceValidateResult } from "../voice";
@@ -14,6 +18,8 @@ import { checkPrefix } from "../utils/string";
 import { ActivityLoader } from "../data/activityLoader";
 import { Song } from "../data/songLoader";
 import { lowerBoundLinear } from "../utils/algorithm";
+import { timems } from "../utils";
+import { corgiQueue } from ".";
 
 export interface MessageResponse {
     message: string;
@@ -55,6 +61,8 @@ export class SBotClient {
             partials: ["CHANNEL"],
         });
 
+        const start = performance.now();
+
         console.log(
             chalk.cyan("Starting S-Bot Framework ") +
                 chalk.magenta(FrameworkVersion) +
@@ -76,7 +84,9 @@ export class SBotClient {
 
         this.client.on("ready", () => {
             Logger.log(
-                `=====> Logged in! Bot Mounted on ${this.client.user?.tag} <=====`,
+                `=====> Logged in! Bot Mounted on ${
+                    this.client.user?.tag
+                } (Took ${timems(start)}) <=====`,
                 "SPECIAL",
                 false
             );
@@ -142,17 +152,18 @@ export class SBotClient {
 
         Logger.log(`Recieved Message from ${msg.author.tag}: ${msg.content}`);
 
-        // * SOnDemand Only Part
-        if (this.voiceOptions?.jutsu == "SOnDemand") {
-            if (checkPrefix(msg.content, this.voiceOptions.prefix.join)) {
-                this.sodJoin(msg);
-                return;
-            }
-            if (checkPrefix(msg.content, this.voiceOptions.prefix.leave)) {
-                this.sodLeave(msg);
-                return;
-            }
-        }
+        // ! Deprecated Part
+        // // * SOnDemand Only Part
+        // if (this.voiceOptions?.jutsu == "SOnDemand") {
+        //     if (checkPrefix(msg.content, this.voiceOptions.prefix.join)) {
+        //         this.sodJoin(msg);
+        //         return;
+        //     }
+        //     if (checkPrefix(msg.content, this.voiceOptions.prefix.leave)) {
+        //         this.sodLeave(msg);
+        //         return;
+        //     }
+        // }
 
         // * DJ Part
         if (
@@ -206,15 +217,16 @@ export class SBotClient {
     private async ttsJutsu(msg: Message, content: string) {
         if (!this.voiceOptions?.jutsu) return;
 
-        if (this.voiceOptions.jutsu == "SOnDemand") {
-            if (!this.voiceCtrl?.isSameChannel(msg.member?.voice.channel)) {
-                return;
-            }
-            if (this.voiceCtrl) {
-                this.voiceCtrl.speak(content);
-                return;
-            }
-        }
+        // ! Deprecated Method
+        // if (this.voiceOptions.jutsu == "SOnDemand") {
+        //     if (!this.voiceCtrl?.isSameChannel(msg.member?.voice.channel)) {
+        //         return;
+        //     }
+        //     if (this.voiceCtrl) {
+        //         this.voiceCtrl.speak(content);
+        //         return;
+        //     }
+        // }
 
         if (this.voiceOptions.jutsu == "CorgiSwift") {
             this.corgiSwiftJutsu(msg, content);
@@ -222,71 +234,75 @@ export class SBotClient {
         }
     }
 
-    // TODO Check if already joined
-    private async sodJoin(msg: Message) {
-        const voiceOptions = this.voiceOptions! as SOnDemand;
-        try {
-            this.voiceCtrl = new VoiceControl(
-                msg,
-                (() => {
-                    this.voiceCtrl = undefined;
-                }).bind(this)
-            );
-            await this.voiceCtrl.waitTillReady("SOD Mode");
-            if (voiceOptions.onJoin) {
-                await this.voiceCtrl.speak(voiceOptions.onJoin);
-            }
-        } catch (err) {
-            if (voiceOptions.fallback?.join_fail?.message) {
-                const message = (() => {
-                    const messages = voiceOptions.fallback.join_fail.message;
-                    switch (err) {
-                        case VoiceValidateResult.NO_CHANNEL:
-                            return messages.no_channel;
-                        case VoiceValidateResult.STAGE_CHANNEL:
-                            return messages.stage_channel;
-                        case VoiceValidateResult.NOT_JOINABLE:
-                            return messages.not_joinable;
-                        default:
-                            return messages.internal;
-                    }
-                })();
+    // ! Deprecated Method
+    // // TODO Check if already joined
+    // private async sodJoin(msg: Message) {
+    //     const voiceOptions = this.voiceOptions! as SOnDemand;
+    //     try {
+    //         this.voiceCtrl = new VoiceControl(
+    //             msg,
+    //             (() => {
+    //                 this.voiceCtrl = undefined;
+    //             }).bind(this)
+    //         );
+    //         await this.voiceCtrl.waitTillReady("SOD Mode");
+    //         if (voiceOptions.onJoin) {
+    //             await this.voiceCtrl.speak(voiceOptions.onJoin);
+    //         }
+    //     } catch (err) {
+    //         if (voiceOptions.fallback?.join_fail?.message) {
+    //             const message = (() => {
+    //                 const messages = voiceOptions.fallback.join_fail.message;
+    //                 switch (err) {
+    //                     case VoiceValidateResult.NO_CHANNEL:
+    //                         return messages.no_channel;
+    //                     case VoiceValidateResult.STAGE_CHANNEL:
+    //                         return messages.stage_channel;
+    //                     case VoiceValidateResult.NOT_JOINABLE:
+    //                         return messages.not_joinable;
+    //                     default:
+    //                         return messages.internal;
+    //                 }
+    //             })();
 
-                if (!message) return;
+    //             if (!message) return;
 
-                if (voiceOptions.fallback.join_fail.reply) msg.reply(message);
-                else msg.channel.send(message);
-            }
-        }
-    }
+    //             if (voiceOptions.fallback.join_fail.reply) msg.reply(message);
+    //             else msg.channel.send(message);
+    //         }
+    //     }
+    // }
 
-    private async sodLeave(msg: Message) {
-        const voiceOptions = this.voiceOptions! as SOnDemand;
+    // private async sodLeave(msg: Message) {
+    //     const voiceOptions = this.voiceOptions! as SOnDemand;
 
-        if (
-            !this.voiceCtrl?.isSameChannel(msg.member?.voice.channel) &&
-            voiceOptions.rules?.onsite_leave
-        ) {
-            const message = voiceOptions.fallback?.onsite_leave?.message;
-            if (message) {
-                if (voiceOptions.fallback?.onsite_leave?.reply)
-                    msg.reply(message);
-                else msg.channel.send(message);
-            }
+    //     if (
+    //         !this.voiceCtrl?.isSameChannel(msg.member?.voice.channel) &&
+    //         voiceOptions.rules?.onsite_leave
+    //     ) {
+    //         const message = voiceOptions.fallback?.onsite_leave?.message;
+    //         if (message) {
+    //             if (voiceOptions.fallback?.onsite_leave?.reply)
+    //                 msg.reply(message);
+    //             else msg.channel.send(message);
+    //         }
 
-            return;
-        }
+    //         return;
+    //     }
 
-        this.voiceCtrl?.destruct();
-    }
+    //     this.voiceCtrl?.destruct();
+    // }
 
-    private corgiSwiftQueue: { msg: Message; content: string }[] = [];
+    private corgiSwiftQueue: corgiQueue[] = [];
     private async corgiSwiftJutsu(msg: Message, content: string) {
         if (VoiceControl.validateUser(msg)) return;
 
+        // * Ignore TTS if Music is on Queue
+        if (this.corgiSwiftQueue.filter((q) => q.type == "SONG").length) return;
+
         const notRunning = !this.corgiSwiftQueue.length;
 
-        this.corgiSwiftQueue.push({ msg, content });
+        this.corgiSwiftQueue.push({ msg, type: "TTS", content });
         if (notRunning) this.corgiSwiftClearQueue();
     }
 
@@ -313,13 +329,20 @@ export class SBotClient {
             await this.voiceCtrl.waitTillReady("CorgiSwift術 Mode");
 
             while (this.corgiSwiftQueue.length) {
-                const words = this.corgiSwiftQueue[0];
+                const frontier = this.corgiSwiftQueue[0];
                 if (
                     this.voiceCtrl.isSameChannel(
-                        words.msg.member?.voice.channel
+                        frontier.msg.member?.voice.channel
                     )
                 ) {
-                    await this.voiceCtrl.speak(words.content);
+                    if (frontier.type == "TTS")
+                        await this.voiceCtrl.speak(frontier.content);
+                    else
+                        await this.corgiPlaySong(
+                            msg,
+                            frontier.song,
+                            frontier.category
+                        );
                     this.corgiSwiftQueue.shift();
                 } else {
                     this.voiceCtrl.destruct();
@@ -347,6 +370,30 @@ export class SBotClient {
     }
 
     async requestSong(msg: Message) {
+        const fallbackMsg = this.voiceOptions?.fallback;
+        let failMsg: string | undefined;
+
+        const validateRes = VoiceControl.validateUser(msg);
+        switch (validateRes) {
+            case VoiceValidateResult.NOT_JOINABLE:
+                failMsg = fallbackMsg?.not_joinable;
+                break;
+            case VoiceValidateResult.NO_CHANNEL:
+                failMsg = fallbackMsg?.no_channel;
+                break;
+            case VoiceValidateResult.STAGE_CHANNEL:
+                failMsg = fallbackMsg?.stage_channel;
+                break;
+        }
+
+        if (validateRes) {
+            if (failMsg) {
+                if (fallbackMsg!.reply) msg.reply(failMsg);
+                else msg.channel.send(failMsg);
+            }
+            return;
+        }
+
         let totalLength = 0;
         const allSongs: Song[] = [];
         const breakpoints = [0];
@@ -376,24 +423,23 @@ export class SBotClient {
         else msg.channel.send(message);
     }
 
-    // TODO Make Play Song compatible with SOD
-
     private async corgiPlaySong(msg: Message, song: Song, category: string) {
         try {
-            this.voiceCtrl = new VoiceControl(
-                msg,
-                (() => {
-                    this.voiceCtrl = undefined;
-                }).bind(this)
-            );
-            await this.voiceCtrl.waitTillReady("🎶🎶 DJCorgi Mode ✨💛");
             Logger.log(
                 `[DJCorgi] Playing ${song.name} in category of ${category}`
             );
-            await this.voiceCtrl.playSong(song.url, song.name);
-            this.voiceCtrl?.destruct();
+            await this.voiceCtrl!.playSong(song.url, song.name ?? "", category);
         } catch (err) {
-            Logger.log(`DJCorgi Music Deliwry Mission Failed: ${err}`);
+            Logger.log(
+                `DJCorgi Music Deliwry Mission Failed while playing ${song.name}: ${err}`
+            );
+            if (this.voiceOptions?.fallback && !msg.deleted) {
+                const iemsg = this.voiceOptions.fallback.internal;
+                if (iemsg) {
+                    if (this.voiceOptions.fallback.reply) msg.reply(iemsg);
+                    else msg.channel.send(iemsg);
+                }
+            }
             this.voiceCtrl?.destruct();
         }
     }

@@ -2,7 +2,7 @@ export function trim(str: string): string {
     return str.replace(/^\s+/, "").toLowerCase();
 }
 
-export function checkPrefix(main: string, prefixes: string[]): boolean {
+export function checkPrefix(main: string, prefixes: string[] = []): boolean {
     for (const prefix of prefixes)
         if (trim(main).startsWith(trim(prefix))) return true;
     return false;

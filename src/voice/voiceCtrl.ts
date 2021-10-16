@@ -173,29 +173,32 @@ export class VoiceControl {
         });
     }
 
-    async playSong(url: string, title?: string) {
-        try {
-            // https://stackoverflow.com/questions/63199238/discord-js-ytdl-error-input-stream-status-code-416
-            const musicStream = ytdl(url, {
-                quality: "highestaudio",
-                highWaterMark: 1 << 25,
-            });
+    async playSong(url: string, title: string, category: string) {
+        // https://stackoverflow.com/questions/63199238/discord-js-ytdl-error-input-stream-status-code-416
+        const musicStream = ytdl(url, {
+            quality: "highestaudio",
+            highWaterMark: 1 << 25,
+        });
 
-            const musicRc = createAudioResource(musicStream);
-            this.player.play(musicRc);
-            this.songRunning = true;
+        const musicRc = createAudioResource(musicStream);
 
-            return new Promise<boolean>((resolve, reject) => {
-                this.player.on(
-                    AudioPlayerStatus.Idle,
-                    (() => {
-                        this.songRunning = false;
-                        resolve(true);
-                    }).bind(this)
-                );
-            });
-        } catch (err) {
-            sLogger.log(`Error playing ${title ?? url}: ${err}`, "ERROR");
-        }
+        sLogger.log(`[DJCorgi] Playing ${title} in category of ${category}`);
+        this.player.play(musicRc);
+        this.songRunning = true;
+
+        return new Promise<boolean>((resolve, reject) => {
+            this.player.on(
+                AudioPlayerStatus.Idle,
+                (() => {
+                    this.songRunning = false;
+                    resolve(true);
+                }).bind(this)
+            );
+        });
+    }
+
+    forceSkip() {
+        // * Stop player causing class to think tts/music has ended
+        this.player.stop();
     }
 }
