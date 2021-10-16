@@ -1,12 +1,18 @@
 # * https://github.com/discordjs/voice/blob/main/.github/workflows/docs.yml
 
 name: Documentation
-on: [push]
+
+on:
+  push:
+    branches:
+      - main
+
 jobs:
   docs:
     strategy:
       matrix:
         node: ['16']
+
     name: Documentation (Node v${{ matrix.node }})
     runs-on: ubuntu-latest
     steps:
@@ -23,6 +29,9 @@ jobs:
 
       - name: Install Dependencies (Yarn)
         run: yarn install
+
+      - name: Run Config
+        run: yarn config:pkg
 
       - name: Build documentation
         run: yarn docs
