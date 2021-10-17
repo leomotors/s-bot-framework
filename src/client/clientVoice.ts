@@ -59,6 +59,19 @@ export interface DJCommands {
         already_empty?: string;
         react?: string;
     };
+    overrides?: {
+        direct_youtube?: {
+            admin_only: boolean;
+            // * This Prefixes will go after play's prefixes
+            prefixes: string[];
+        };
+        play_any_song?: {
+            // TODO
+            admin_only: boolean;
+            // * This Prefixes will go after play's prefixes
+            prefixes: string[];
+        };
+    };
 }
 
 interface corgiQueueTTS {

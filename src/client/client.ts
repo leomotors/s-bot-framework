@@ -157,40 +157,7 @@ export class SBotClient {
         Logger.log(`Recieved Message from ${msg.author.tag}: ${msg.content}`);
 
         // * DJ Corgi Part
-        if (
-            this.djCommands &&
-            checkPrefix(msg.content, this.djCommands.play.prefixes)
-        ) {
-            this.requestSong(msg);
-            return;
-        }
-
-        if (this.djCommands?.skip) {
-            if (checkPrefix(msg.content, this.djCommands.skip.prefixes)) {
-                if (this.voiceCtrl) {
-                    this.voiceCtrl.forceSkip();
-                    this.djCommands.skip.react &&
-                        msg.react(this.djCommands.skip.react);
-                } else {
-                    this.djCommands.skip.already_empty &&
-                        msg.reply(this.djCommands.skip.already_empty);
-                }
-            }
-        }
-
-        if (this.djCommands?.clear) {
-            if (checkPrefix(msg.content, this.djCommands.clear.prefixes)) {
-                if (this.voiceCtrl) {
-                    this.corgiSwiftQueue = [];
-                    this.voiceCtrl.forceSkip();
-                    this.djCommands.clear.react &&
-                        msg.react(this.djCommands.clear.react);
-                } else {
-                    this.djCommands.clear.already_empty &&
-                        msg.reply(this.djCommands.clear.already_empty);
-                }
-            }
-        }
+        if (this.djCorgiResponse(msg)) return;
 
         // * Registered Response Part
         for (const response of this.utility.response) {
@@ -230,6 +197,47 @@ export class SBotClient {
 
     useVoice(options: VoiceOptions) {
         this.voiceOptions = options;
+    }
+
+    private djCorgiResponse(msg: Message): boolean {
+        if (
+            this.djCommands &&
+            checkPrefix(msg.content, this.djCommands.play.prefixes)
+        ) {
+            this.requestSong(msg);
+            return true;
+        }
+
+        if (this.djCommands?.skip) {
+            if (checkPrefix(msg.content, this.djCommands.skip.prefixes)) {
+                if (this.voiceCtrl) {
+                    this.voiceCtrl.forceSkip();
+                    this.djCommands.skip.react &&
+                        msg.react(this.djCommands.skip.react);
+                } else {
+                    this.djCommands.skip.already_empty &&
+                        msg.reply(this.djCommands.skip.already_empty);
+                }
+                return true;
+            }
+        }
+
+        if (this.djCommands?.clear) {
+            if (checkPrefix(msg.content, this.djCommands.clear.prefixes)) {
+                if (this.voiceCtrl) {
+                    this.corgiSwiftQueue = [];
+                    this.voiceCtrl.forceSkip();
+                    this.djCommands.clear.react &&
+                        msg.react(this.djCommands.clear.react);
+                } else {
+                    this.djCommands.clear.already_empty &&
+                        msg.reply(this.djCommands.clear.already_empty);
+                }
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private async ttsJutsu(msg: Message, content: string) {
@@ -368,6 +376,35 @@ export class SBotClient {
 
         let selectedIndex = Math.floor(Math.random() * totalLength);
 
+        if (this.djCommands?.overrides) {
+            const overrides = this.djCommands.overrides;
+
+            if (overrides.direct_youtube) {
+                if (
+                    checkPrefix(
+                        msg.content
+                            .split(" ")
+                            .slice(1)
+                            .filter((w) => w.length)
+                            .join(" "),
+                        overrides.direct_youtube.prefixes
+                    )
+                ) {
+                    this.corgiSwiftQueue.push({
+                        msg,
+                        type: "SONG",
+                        song: {
+                            url: msg.content.split(" ")[2],
+                        },
+                        category: "YouTube",
+                    });
+                    if (this.corgiSwiftQueue.length < 2)
+                        this.corgiSwiftClearQueue();
+                    return;
+                }
+            }
+        }
+
         if (!this.djCommands!.play.random_only && userQuery) {
             // * User Search
             const matched: { index: number; song: Song }[] = [];
@@ -443,7 +480,9 @@ export class SBotClient {
                 const vidInfo = await ytdl.getBasicInfo(song.url);
                 const msgE = new MessageEmbed({
                     title: embed.title ?? "Now Playing",
-                    description: `\`\`\`css\n${song.name}\n\`\`\``,
+                    description: `\`\`\`css\n${
+                        song.name ?? vidInfo.videoDetails.title
+                    }\n\`\`\``,
                     color: embed.color ?? "BLUE",
                     author: {
                         name: msg.author.username,
