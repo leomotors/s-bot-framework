@@ -1,4 +1,4 @@
-import { Message } from "discord.js";
+import { ColorResolvable, Message } from "discord.js";
 import { Song, SongLoader } from "../data/songLoader";
 
 export interface CorgiSwiftJutsu {
@@ -10,46 +10,9 @@ export interface CorgiSwiftJutsu {
         internal?: string;
         reply?: boolean;
     };
-    skip?: {
-        prefixes: string[];
-        fallback?: string;
-        react?: string;
-    };
 }
 
-// ! Deprecated Method
-// export interface SOnDemand {
-//     jutsu: "SOnDemand";
-//     prefix: {
-//         join: string[];
-//         leave: string[];
-//     };
-//     onJoin?: string;
-//     fallback?: {
-//         join_fail?: {
-//             message?: {
-//                 no_channel?: string;
-//                 stage_channel?: string;
-//                 not_joinable?: string;
-//                 internal?: string;
-//             };
-//             reply?: boolean;
-//         };
-//         already_join?: {
-//             message?: string;
-//             reply?: boolean;
-//         };
-//         onsite_leave?: {
-//             message?: string;
-//             reply?: boolean;
-//         };
-//     };
-//     rules?: {
-//         onsite_leave: boolean;
-//     };
-// }
-
-export type VoiceOptions = CorgiSwiftJutsu /* | SOnDemand*/;
+export type VoiceOptions = CorgiSwiftJutsu;
 
 export enum SongAppearance {
     EVERYWHERE = 0,
@@ -64,13 +27,37 @@ export interface SongOptions {
     onPlay: string;
 }
 
-export interface DJOptions {
-    prefixes: string[];
-    random_only?: boolean;
-    reply?: boolean;
-    onQueued: {
-        tts: string;
-        song: string;
+export interface DJCommands {
+    play: {
+        prefixes: string[];
+        random_only?: boolean;
+        reply?: boolean;
+        onQueued: {
+            tts: string;
+            song: string;
+        };
+        search_fail?: string;
+        search_multiple_result?: string;
+        now_playing?: {
+            send_embed: boolean;
+            color?: ColorResolvable;
+            title?: string;
+            requested_by?: string;
+            duration?: string;
+            link?: string;
+            click_here?: string;
+            footer?: string;
+        };
+    };
+    skip?: {
+        prefixes: string[];
+        already_empty?: string;
+        react?: string;
+    };
+    clear?: {
+        prefixes: string[];
+        already_empty?: string;
+        react?: string;
     };
 }
 

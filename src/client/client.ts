@@ -1,24 +1,28 @@
-import { ActivityOptions, Client, Message, Intents } from "discord.js";
+import {
+    ActivityOptions,
+    Client,
+    Message,
+    Intents,
+    MessageEmbed,
+} from "discord.js";
 import chalk from "chalk";
+import ytdl from "ytdl-core";
+
 import dotenv from "dotenv";
 dotenv.config();
 
 import { sLogger as Logger } from "../logger/logger";
 import { Response } from "../response/response";
 import { Console } from "../console/console";
-import {
-    /*SOnDemand,*/ VoiceOptions,
-    DJOptions,
-    SongOptions,
-} from "./clientVoice";
+import { VoiceOptions, DJCommands, SongOptions } from "./clientVoice";
 
 import { Version as FrameworkVersion } from "../config";
 import { VoiceControl, VoiceValidateResult } from "../voice";
-import { checkPrefix } from "../utils/string";
+import { checkPrefix, shorten, trim } from "../utils/string";
 import { ActivityLoader } from "../data/activityLoader";
 import { Song } from "../data/songLoader";
 import { lowerBoundLinear } from "../utils/algorithm";
-import { timems } from "../utils";
+import { durationFormat, timems } from "../utils";
 import { corgiQueue } from ".";
 
 export interface MessageResponse {
@@ -152,37 +156,38 @@ export class SBotClient {
 
         Logger.log(`Recieved Message from ${msg.author.tag}: ${msg.content}`);
 
-        // ! Deprecated Part
-        // // * SOnDemand Only Part
-        // if (this.voiceOptions?.jutsu == "SOnDemand") {
-        //     if (checkPrefix(msg.content, this.voiceOptions.prefix.join)) {
-        //         this.sodJoin(msg);
-        //         return;
-        //     }
-        //     if (checkPrefix(msg.content, this.voiceOptions.prefix.leave)) {
-        //         this.sodLeave(msg);
-        //         return;
-        //     }
-        // }
-
-        // * DJ Part
+        // * DJ Corgi Part
         if (
-            this.djOptions &&
-            checkPrefix(msg.content, this.djOptions.prefixes)
+            this.djCommands &&
+            checkPrefix(msg.content, this.djCommands.play.prefixes)
         ) {
             this.requestSong(msg);
             return;
         }
 
-        if (this.voiceOptions?.skip) {
-            if (checkPrefix(msg.content, this.voiceOptions.skip.prefixes)) {
+        if (this.djCommands?.skip) {
+            if (checkPrefix(msg.content, this.djCommands.skip.prefixes)) {
                 if (this.voiceCtrl) {
                     this.voiceCtrl.forceSkip();
-                    this.voiceOptions.skip.react &&
-                        msg.react(this.voiceOptions.skip.react);
+                    this.djCommands.skip.react &&
+                        msg.react(this.djCommands.skip.react);
                 } else {
-                    this.voiceOptions.skip.fallback &&
-                        msg.reply(this.voiceOptions.skip.fallback);
+                    this.djCommands.skip.already_empty &&
+                        msg.reply(this.djCommands.skip.already_empty);
+                }
+            }
+        }
+
+        if (this.djCommands?.clear) {
+            if (checkPrefix(msg.content, this.djCommands.clear.prefixes)) {
+                if (this.voiceCtrl) {
+                    this.corgiSwiftQueue = [];
+                    this.voiceCtrl.forceSkip();
+                    this.djCommands.clear.react &&
+                        msg.react(this.djCommands.clear.react);
+                } else {
+                    this.djCommands.clear.already_empty &&
+                        msg.reply(this.djCommands.clear.already_empty);
                 }
             }
         }
@@ -230,81 +235,11 @@ export class SBotClient {
     private async ttsJutsu(msg: Message, content: string) {
         if (!this.voiceOptions?.jutsu) return;
 
-        // ! Deprecated Method
-        // if (this.voiceOptions.jutsu == "SOnDemand") {
-        //     if (!this.voiceCtrl?.isSameChannel(msg.member?.voice.channel)) {
-        //         return;
-        //     }
-        //     if (this.voiceCtrl) {
-        //         this.voiceCtrl.speak(content);
-        //         return;
-        //     }
-        // }
-
         if (this.voiceOptions.jutsu == "CorgiSwift") {
             this.corgiSwiftJutsu(msg, content);
             return;
         }
     }
-
-    // ! Deprecated Method
-    // // TODO Check if already joined
-    // private async sodJoin(msg: Message) {
-    //     const voiceOptions = this.voiceOptions! as SOnDemand;
-    //     try {
-    //         this.voiceCtrl = new VoiceControl(
-    //             msg,
-    //             (() => {
-    //                 this.voiceCtrl = undefined;
-    //             }).bind(this)
-    //         );
-    //         await this.voiceCtrl.waitTillReady("SOD Mode");
-    //         if (voiceOptions.onJoin) {
-    //             await this.voiceCtrl.speak(voiceOptions.onJoin);
-    //         }
-    //     } catch (err) {
-    //         if (voiceOptions.fallback?.join_fail?.message) {
-    //             const message = (() => {
-    //                 const messages = voiceOptions.fallback.join_fail.message;
-    //                 switch (err) {
-    //                     case VoiceValidateResult.NO_CHANNEL:
-    //                         return messages.no_channel;
-    //                     case VoiceValidateResult.STAGE_CHANNEL:
-    //                         return messages.stage_channel;
-    //                     case VoiceValidateResult.NOT_JOINABLE:
-    //                         return messages.not_joinable;
-    //                     default:
-    //                         return messages.internal;
-    //                 }
-    //             })();
-
-    //             if (!message) return;
-
-    //             if (voiceOptions.fallback.join_fail.reply) msg.reply(message);
-    //             else msg.channel.send(message);
-    //         }
-    //     }
-    // }
-
-    // private async sodLeave(msg: Message) {
-    //     const voiceOptions = this.voiceOptions! as SOnDemand;
-
-    //     if (
-    //         !this.voiceCtrl?.isSameChannel(msg.member?.voice.channel) &&
-    //         voiceOptions.rules?.onsite_leave
-    //     ) {
-    //         const message = voiceOptions.fallback?.onsite_leave?.message;
-    //         if (message) {
-    //             if (voiceOptions.fallback?.onsite_leave?.reply)
-    //                 msg.reply(message);
-    //             else msg.channel.send(message);
-    //         }
-
-    //         return;
-    //     }
-
-    //     this.voiceCtrl?.destruct();
-    // }
 
     private corgiSwiftQueue: corgiQueue[] = [];
     private async corgiSwiftJutsu(msg: Message, content: string) {
@@ -375,14 +310,19 @@ export class SBotClient {
 
     /// * MUSIC SECTION * ///
 
+    private printSongsList(songs: { index: number; song: Song }[]): string {
+        return songs.map((s) => `#${s.index} : ${s.song.name}`).join("\n");
+    }
+
     private songOptions?: SongOptions[];
-    private djOptions?: DJOptions;
-    useDJ(SongOptions: SongOptions[], Options: DJOptions) {
+    private djCommands?: DJCommands;
+    useDJ(SongOptions: SongOptions[], Options: DJCommands) {
         this.songOptions = SongOptions;
-        this.djOptions = Options;
+        this.djCommands = Options;
     }
 
     async requestSong(msg: Message) {
+        // * Validate User
         const fallbackMsg = this.voiceOptions?.fallback;
         let failMsg: string | undefined;
 
@@ -401,12 +341,13 @@ export class SBotClient {
 
         if (validateRes) {
             if (failMsg) {
-                if (fallbackMsg!.reply) msg.reply(failMsg);
+                if (fallbackMsg!.reply && !msg.deleted) msg.reply(failMsg);
                 else msg.channel.send(failMsg);
             }
             return;
         }
 
+        // * Prepare Music Data
         let totalLength = 0;
         const allSongs: Song[] = [];
         const breakpoints = [0];
@@ -416,12 +357,61 @@ export class SBotClient {
             allSongs.push(...so.loader.getData());
         });
 
-        // TODO Add Search
-        const selectedIndex = Math.floor(Math.random() * totalLength);
+        const userQuery = msg.content
+            .split(" ")
+            .filter((w) => w.length)
+            .slice(1)
+            .join(" ");
+
+        const getCategory = (index: number) =>
+            this.songOptions![lowerBoundLinear(breakpoints, index)];
+
+        let selectedIndex = Math.floor(Math.random() * totalLength);
+
+        if (!this.djCommands!.play.random_only && userQuery) {
+            // * User Search
+            const matched: { index: number; song: Song }[] = [];
+            for (let i = 0; i < totalLength; i++) {
+                if (
+                    trim(allSongs[i].name?.toLowerCase() ?? "").includes(
+                        trim(userQuery)
+                    )
+                ) {
+                    if (!getCategory(i).appearance)
+                        matched.push({
+                            index: i,
+                            song: allSongs[i],
+                        });
+                }
+            }
+
+            if (matched.length) {
+                if (matched.length > 1) {
+                    const message = shorten(
+                        `${this.djCommands!.play.search_multiple_result}\n` +
+                            this.printSongsList(matched),
+                        1950
+                    );
+
+                    if (this.djCommands!.play.reply && !msg.deleted)
+                        msg.reply(message);
+                    else msg.channel.send(message);
+                    return;
+                }
+                selectedIndex = matched[0].index;
+            } else {
+                const sf = this.djCommands!.play.search_fail;
+                if (sf) {
+                    if (this.djCommands!.play.reply && !msg.deleted)
+                        msg.reply(sf);
+                    else msg.channel.send(sf);
+                    return;
+                }
+            }
+        }
 
         const selectedSong = allSongs[selectedIndex];
-        const selectedCategory =
-            this.songOptions![lowerBoundLinear(breakpoints, selectedIndex)];
+        const selectedCategory = getCategory(selectedIndex);
         const category = selectedCategory.category;
         const onPlay = selectedCategory.onPlay;
 
@@ -436,17 +426,57 @@ export class SBotClient {
         let message = onPlay.replace("{song_name}", selectedSong.name ?? "???");
         if (!isEmptyQueue) {
             if (this.corgiSwiftQueue[0].type == "TTS")
-                message += ` ${this.djOptions!.onQueued.tts}`;
-            else message += ` ${this.djOptions!.onQueued.song}`;
+                message += ` ${this.djCommands!.play.onQueued.tts}`;
+            else message += ` ${this.djCommands!.play.onQueued.song}`;
         }
 
-        if (this.djOptions!.reply) msg.reply(message);
+        if (this.djCommands!.play.reply) msg.reply(message);
         else msg.channel.send(message);
 
         if (isEmptyQueue) this.corgiSwiftClearQueue();
     }
 
     private async corgiPlaySong(msg: Message, song: Song, category: string) {
+        const embed = this.djCommands!.play.now_playing;
+        if (embed?.send_embed) {
+            try {
+                const vidInfo = await ytdl.getBasicInfo(song.url);
+                const msgE = new MessageEmbed({
+                    title: embed.title ?? "Now Playing",
+                    description: `\`\`\`css\n${song.name}\n\`\`\``,
+                    color: embed.color ?? "BLUE",
+                    author: {
+                        name: msg.author.username,
+                        iconURL: msg.author.avatarURL() ?? undefined,
+                    },
+                })
+                    .setThumbnail(vidInfo.videoDetails.thumbnails[0].url)
+                    .addField(
+                        embed.requested_by ?? "Requested by",
+                        `<@!${msg.author.id}>`
+                    )
+                    .addField(
+                        embed.duration ?? "Duration",
+                        durationFormat(
+                            vidInfo.player_response.videoDetails.lengthSeconds
+                        )
+                    )
+                    .addField(
+                        embed.link ?? "Link",
+                        `[${embed.click_here ?? "Click"}](${song.url})`
+                    )
+                    .setTimestamp()
+                    .setFooter(embed.footer ?? "");
+                msg.channel.send({ embeds: [msgE] });
+            } catch (err) {
+                Logger.log(
+                    `Error getting info of ${song.name} or sending its embed : ${err}`,
+                    "ERROR"
+                );
+                return;
+            }
+        }
+
         try {
             await this.voiceCtrl!.playSong(song.url, song.name ?? "", category);
         } catch (err) {
