@@ -20,7 +20,7 @@ All Features exists in this framework is feature that exists in Salim Bot, you c
 
 - Text to Speech
 
-- Simple DJ (WIP)
+- Simple DJ, is not as good as most music bot but enough for my Salim Bot's usage
 
 - more! (see documents or Salim Bot for all features)
 

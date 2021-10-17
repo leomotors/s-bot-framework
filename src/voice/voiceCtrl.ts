@@ -176,8 +176,10 @@ export class VoiceControl {
     async playSong(url: string, title: string, category: string) {
         // https://stackoverflow.com/questions/63199238/discord-js-ytdl-error-input-stream-status-code-416
         const musicStream = ytdl(url, {
+            filter: "audioonly",
             quality: "highestaudio",
             highWaterMark: 1 << 25,
+            liveBuffer: 4000,
         });
 
         const musicRc = createAudioResource(musicStream);

@@ -1,6 +1,6 @@
 {
   "name": "s-bot-framework",
-  "version": "1.0.95-pre",
+  "version": "1.0.98-pre",
   "description": "Discord Bot Framework built for Salim Bot but also applicable for other uses",
   "main": "dist/index.js",
   "types": "dist",

@@ -398,6 +398,10 @@ export class SBotClient {
                         },
                         category: "YouTube",
                     });
+                    const m = this.djCommands.overrides.direct_youtube!.message;
+                    if (this.djCommands.overrides.direct_youtube!.reply)
+                        msg.reply(m);
+                    else msg.channel.send(m);
                     if (this.corgiSwiftQueue.length < 2)
                         this.corgiSwiftClearQueue();
                     return;

@@ -64,6 +64,8 @@ export interface DJCommands {
             admin_only: boolean;
             // * This Prefixes will go after play's prefixes
             prefixes: string[];
+            message: string;
+            reply?: boolean;
         };
         play_any_song?: {
             // TODO
