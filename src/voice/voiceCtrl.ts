@@ -1,5 +1,6 @@
 import {
     AudioPlayer,
+    AudioPlayerError,
     AudioPlayerStatus,
     AudioResource,
     createAudioPlayer,
@@ -57,7 +58,11 @@ export class VoiceControl {
         return VoiceValidateResult.OK;
     }
 
-    constructor(msg: Message, handleDisconnect: () => void) {
+    constructor(
+        msg: Message,
+        ignorePrivacy: boolean,
+        handleDisconnect: () => void
+    ) {
         this.handleDisconnect = handleDisconnect;
         const validateResult = VoiceControl.validateUser(msg);
         if (validateResult) throw validateResult;
@@ -73,7 +78,7 @@ export class VoiceControl {
             guildId: voiceChannel.guild.id,
             adapterCreator: voiceChannel.guild
                 .voiceAdapterCreator as DiscordGatewayAdapterCreator,
-            selfMute: false,
+            selfMute: ignorePrivacy,
         });
 
         connection.subscribe(this.player);
@@ -135,7 +140,7 @@ export class VoiceControl {
 
     private speakQueue: AudioResource<any>[] = [];
 
-    async speak(content: string) {
+    async speak(content: string): Promise<boolean> {
         sLogger.log(
             `[TTS] Started Speaking ${shorten(content, 30)} to ${
                 this.channelName
@@ -173,7 +178,11 @@ export class VoiceControl {
         });
     }
 
-    async playSong(url: string, title: string, category: string) {
+    async playSong(
+        url: string,
+        title: string,
+        category: string
+    ): Promise<boolean> {
         // https://stackoverflow.com/questions/63199238/discord-js-ytdl-error-input-stream-status-code-416
         const musicStream = ytdl(url, {
             filter: "audioonly",
@@ -196,11 +205,19 @@ export class VoiceControl {
                     resolve(true);
                 }).bind(this)
             );
+            this.player.on("error", (err: AudioPlayerError) => {
+                this.songRunning = false;
+                sLogger.log(
+                    `[DJCorgi] Error while playing ${title}: ${err.message}`,
+                    "ERROR"
+                );
+                resolve(false);
+            });
         });
     }
 
     forceSkip() {
         // * Stop player causing class to think tts/music has ended
-        this.player.stop();
+        this.player.stop(true);
     }
 }

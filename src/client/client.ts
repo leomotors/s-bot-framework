@@ -52,6 +52,8 @@ export class SBotClient {
         activityLoader?: ActivityLoader;
     };
 
+    private options: SBotOptions;
+
     constructor(options?: SBotOptions) {
         this.client = new Client({
             intents: [
@@ -82,7 +84,7 @@ export class SBotClient {
             token = process.env.DISCORD_TOKEN,
             activityRefreshInterval = 120,
             logLocation,
-        } = options ?? {};
+        } = (this.options = options ?? {});
 
         Logger.startFile(logLocation);
 
@@ -278,6 +280,7 @@ export class SBotClient {
         try {
             this.voiceCtrl = new VoiceControl(
                 msg,
+                this.options.ignorePrivacy ?? false,
                 (() => {
                     this.voiceCtrl = undefined;
                 }).bind(this)
@@ -521,7 +524,11 @@ export class SBotClient {
         }
 
         try {
-            await this.voiceCtrl!.playSong(song.url, song.name ?? "", category);
+            await this.voiceCtrl!.playSong(
+                song.url,
+                song.name ?? "<Other Sauce Song>",
+                category
+            );
         } catch (err) {
             Logger.log(
                 `DJCorgi Music Deliwry Mission Failed while playing ${song.name}: ${err}`
