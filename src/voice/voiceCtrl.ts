@@ -164,7 +164,7 @@ export class VoiceControl {
 
         if (!initiated) this.player.play(this.speakQueue.shift()!);
 
-        return new Promise<true>((resolve, reject) => {
+        return new Promise<boolean>((resolve, reject) => {
             this.player.on(
                 AudioPlayerStatus.Idle,
                 (() => {
@@ -175,6 +175,16 @@ export class VoiceControl {
                     }
                 }).bind(this)
             );
+            // * By GitHub Copilot
+            this.player.on("error", (err) => {
+                sLogger.log(
+                    `[TTS] Error Speaking ${shorten(content, 30)} to ${
+                        this.channelName
+                    } : ${err}`,
+                    "ERROR"
+                );
+                resolve(false);
+            });
         });
     }
 

@@ -4,7 +4,7 @@ _meaning: Salim Bot Framework_
 
 Discord Bot Framework built for [Salim Bot](https://github.com/leomotors/salim-bot) but also applicable for other uses
 
-*Now in Pre-Release Phase*
+*Now in ~~abandoned~~ Full Release Phase!*
 
 ## ✨✨ Features
 
@@ -43,3 +43,15 @@ Guide Coming Soon! (*or may not come*)
 - nodejs 16.6.0+ (discordjs 13 requirement)
 
 - Finally, a Discord Bot to runs on!
+
+## ⚠️ Limitation
+
+- This Framework is built for Salim Bot and should only applicable for bots that work similar way
+
+- Salim Bot is designed to response to messages thus, Slash Command is not provided
+
+- Badly written, Cannot handle more than one server at a time
+
+- I'm lazy, gonna abandon this for a while
+
+**Note**: These limitation is things that Salim Bot will never do, so never gonna be fixed.
