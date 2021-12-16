@@ -2,6 +2,10 @@
 
 All notable changes to the "s-bot-framework" extension ~~will~~ may be documented in this file.
 
+## 1.0.301
+
+- Added Auto Refresh for Online Loader
+
 ## 1.0.300
 
 - Probably last version as I'm lazy to do this now

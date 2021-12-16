@@ -6,6 +6,7 @@ import { timems } from "../../utils";
 export class OnlineLoader extends StringLoader {
     private url: string;
     private data_key?: string;
+    private interval?: NodeJS.Timer;
 
     constructor(url: string, data_key?: string, transform?: transformFunction) {
         super(transform);
@@ -15,7 +16,7 @@ export class OnlineLoader extends StringLoader {
         this.loadData();
     }
 
-    override async loadData() {
+    override async loadData(autorefresh: boolean = false) {
         try {
             const start = performance.now();
             const res = await fetch(this.url);
@@ -26,13 +27,22 @@ export class OnlineLoader extends StringLoader {
                 this.data_key ? obj[this.data_key] : obj
             );
             sLogger.log(
-                `Successfully fetched ${this.data.length} datas from ${
-                    this.url
-                } in ${timems(start)}`,
+                `${autorefresh ? "[AUTO] " : ""}Successfully fetched ${
+                    this.data.length
+                } datas from ${this.url} in ${timems(start)}`,
                 "SUCCESS"
             );
         } catch (err) {
             sLogger.log(`Can't fetch data from ${this.url}`, "ERROR");
         }
+    }
+
+    setAutoRefresh(minutes: number): NodeJS.Timer {
+        if (this.interval) clearInterval(this.interval);
+        this.interval = setInterval(
+            () => this.loadData(true),
+            minutes * 60 * 1000
+        );
+        return this.interval;
     }
 }
