@@ -2,6 +2,14 @@
 
 All notable changes to the "s-bot-framework" extension ~~will~~ may be documented in this file.
 
+## 1.0.302
+
+- Fixed detection bug
+
+### Known Issues (since many versions)
+
+- TTS will no longer work after played music, a restart is needed.
+
 ## 1.0.301
 
 - Added Auto Refresh for Online Loader

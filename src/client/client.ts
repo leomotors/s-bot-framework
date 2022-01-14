@@ -36,7 +36,9 @@ export interface MessageResponse {
 export interface SBotOptions {
     token?: string;
     activityRefreshInterval?: number;
+    // * To Disable Logging: Use null here, undefined will use default location
     logLocation?: string | null;
+    // * If is true, bot will not deafen when join voice channel
     ignorePrivacy?: boolean;
 }
 
@@ -512,7 +514,7 @@ export class SBotClient {
                         `[${embed.click_here ?? "Click"}](${song.url})`
                     )
                     .setTimestamp()
-                    .setFooter(embed.footer ?? "");
+                    .setFooter({ text: embed.footer ?? "" });
                 msg.channel.send({ embeds: [msgE] });
             } catch (err) {
                 Logger.log(
