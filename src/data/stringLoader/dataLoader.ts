@@ -1,7 +1,9 @@
 import fs from "fs/promises";
-import { StringLoader, transformFunction } from "./stringLoader";
+
 import { sLogger } from "../../logger";
 import { timems } from "../../utils";
+
+import { StringLoader, transformFunction } from "./stringLoader";
 
 export class DataLoader extends StringLoader {
     private data_path: string;

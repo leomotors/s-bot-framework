@@ -1,4 +1,5 @@
 import { ColorResolvable, Message } from "discord.js";
+
 import { Song, SongLoader } from "../data/songLoader";
 
 export interface CorgiSwiftJutsu {

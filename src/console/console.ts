@@ -1,4 +1,5 @@
 import readline from "readline";
+
 import type { SBotClient } from "../client/";
 import { Loader } from "../data/loader";
 
@@ -32,8 +33,8 @@ export class Console {
         }
     }
 
-    private loaders: Loader<any>[] = [];
-    addLoader(...args: Loader<any>[]) {
+    private loaders: Loader<unknown>[] = [];
+    addLoader(...args: Loader<unknown>[]) {
         this.loaders.push(...args);
     }
 }

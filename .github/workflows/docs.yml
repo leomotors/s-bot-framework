@@ -3,9 +3,8 @@
 name: Documentation
 
 on:
-  push:
-    branches:
-      - main
+  release:
+    types: [released]
 
 jobs:
   docs:
@@ -31,7 +30,7 @@ jobs:
         run: yarn install
 
       - name: Run Config
-        run: yarn config:pkg
+        run: yarn lm-config
 
       - name: Build documentation
         run: yarn docs

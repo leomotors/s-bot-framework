@@ -1,7 +1,9 @@
 import fetch from "node-fetch";
-import { StringLoader, transformFunction } from "./stringLoader";
+
 import { sLogger } from "../../logger";
 import { timems } from "../../utils";
+
+import { StringLoader, transformFunction } from "./stringLoader";
 
 export class OnlineLoader extends StringLoader {
     private url: string;
@@ -16,7 +18,7 @@ export class OnlineLoader extends StringLoader {
         this.loadData();
     }
 
-    override async loadData(autorefresh: boolean = false) {
+    override async loadData(autorefresh = false) {
         try {
             const start = performance.now();
             const res = await fetch(this.url);

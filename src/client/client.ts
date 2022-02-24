@@ -1,3 +1,4 @@
+import chalk from "chalk";
 import {
     ActivityOptions,
     Client,
@@ -5,25 +6,24 @@ import {
     Intents,
     MessageEmbed,
 } from "discord.js";
-import chalk from "chalk";
+import dotenv from "dotenv";
 import ytdl from "ytdl-core";
 
-import dotenv from "dotenv";
-dotenv.config();
-
-import { sLogger as Logger } from "../logger/logger";
-import { Response } from "../response/response";
-import { Console } from "../console/console";
-import { VoiceOptions, DJCommands, SongOptions } from "./clientVoice";
-
 import { Version as FrameworkVersion } from "../config";
-import { VoiceControl, VoiceValidateResult } from "../voice";
-import { checkPrefix, shorten, trim } from "../utils/string";
+import { Console } from "../console/console";
 import { ActivityLoader } from "../data/activityLoader";
 import { Song } from "../data/songLoader";
-import { lowerBoundLinear } from "../utils/algorithm";
+import { sLogger as Logger } from "../logger/logger";
+import { Response } from "../response/response";
 import { durationFormat, timems } from "../utils";
+import { lowerBoundLinear } from "../utils/algorithm";
+import { checkPrefix, shorten, trim } from "../utils/string";
+import { VoiceControl, VoiceValidateResult } from "../voice";
+
 import { corgiQueue } from ".";
+import { VoiceOptions, DJCommands, SongOptions } from "./clientVoice";
+
+dotenv.config();
 
 export interface MessageResponse {
     message: string;
@@ -103,12 +103,9 @@ export class SBotClient {
 
         this.client.login(token);
 
-        setInterval(
-            (() => {
-                this.setSelfActivity();
-            }).bind(this),
-            activityRefreshInterval * 1000
-        );
+        setInterval(() => {
+            this.setSelfActivity();
+        }, activityRefreshInterval * 1000);
 
         this.client.on("messageCreate", this.response.bind(this));
     }
@@ -283,9 +280,9 @@ export class SBotClient {
             this.voiceCtrl = new VoiceControl(
                 msg,
                 this.options.ignorePrivacy ?? false,
-                (() => {
+                () => {
                     this.voiceCtrl = undefined;
-                }).bind(this)
+                }
             );
             await this.voiceCtrl.waitTillReady("CorgiSwift術 Mode");
 

@@ -1,10 +1,10 @@
-import { getFormattedTime } from "./time";
-
-import fs from "fs/promises";
 import chalk from "chalk";
+import fs from "fs/promises";
 import stripAnsi from "strip-ansi";
 
 import { Version as FrameworkVersion } from "../config";
+
+import { getFormattedTime } from "./time";
 
 export type LogStatus = "NORMAL" | "WARNING" | "ERROR" | "SUCCESS" | "SPECIAL";
 

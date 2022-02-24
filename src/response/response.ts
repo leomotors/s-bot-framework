@@ -1,6 +1,6 @@
-import { trim } from "../utils/string";
-import { StringLoader } from "../data";
 import { MessageResponse, SBotClient } from "../client";
+import { StringLoader } from "../data";
+import { trim } from "../utils/string";
 
 export interface TriggerOptions {
     prefixes?: string[];
@@ -93,8 +93,8 @@ export class Response {
         const selectedIndex = Math.floor(
             this.response.loader.getData().length * Math.random()
         );
-        let selectedData = data[selectedIndex];
-        let refIndex = this.response.loader.getRefIndex(selectedIndex);
+        const selectedData = data[selectedIndex];
+        const refIndex = this.response.loader.getRefIndex(selectedIndex);
 
         this.returnedItem = {
             refIndex,

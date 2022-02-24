@@ -1,9 +1,10 @@
 import { ActivityOptions } from "discord.js";
 import fs from "fs/promises";
 
-import { Loader } from "./loader";
 import { sLogger } from "../logger";
 import { timems } from "../utils";
+
+import { Loader } from "./loader";
 
 export class ActivityLoader extends Loader<ActivityOptions> {
     private data_path: string;

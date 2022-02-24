@@ -9,15 +9,14 @@ import {
     entersState,
     getVoiceConnection,
     joinVoiceChannel,
-    StreamType,
     VoiceConnectionStatus,
 } from "@discordjs/voice";
 
-import { Message, StageChannel, VoiceChannel } from "discord.js";
-
 import chalk from "chalk";
-
+import { Message, StageChannel, VoiceChannel } from "discord.js";
 import { getAllAudioUrls } from "google-tts-api";
+import { IncomingMessage } from "http";
+import https from "https";
 import ytdl from "ytdl-core";
 
 import { sLogger } from "../logger";
@@ -84,33 +83,27 @@ export class VoiceControl {
         connection.subscribe(this.player);
 
         // * https://discordjs.guide/voice/voice-connections.html#handling-disconnects
-        connection.on(
-            VoiceConnectionStatus.Disconnected,
-            async (oldState, newState) => {
-                try {
-                    await Promise.race([
-                        entersState(
-                            connection,
-                            VoiceConnectionStatus.Signalling,
-                            5000
-                        ),
-                        entersState(
-                            connection,
-                            VoiceConnectionStatus.Connecting,
-                            5000
-                        ),
-                    ]);
-                    // Seems to be reconnecting to a new channel - ignore disconnect
-                } catch (error) {
-                    // Seems to be a real disconnect which SHOULDN'T be recovered from
-                    sLogger.log(
-                        `Disconnected from ${this.channelName}`,
-                        "WARNING"
-                    );
-                    this.destruct();
-                }
+        connection.on(VoiceConnectionStatus.Disconnected, async (_, __) => {
+            try {
+                await Promise.race([
+                    entersState(
+                        connection,
+                        VoiceConnectionStatus.Signalling,
+                        5000
+                    ),
+                    entersState(
+                        connection,
+                        VoiceConnectionStatus.Connecting,
+                        5000
+                    ),
+                ]);
+                // Seems to be reconnecting to a new channel - ignore disconnect
+            } catch (error) {
+                // Seems to be a real disconnect which SHOULDN'T be recovered from
+                sLogger.log(`Disconnected from ${this.channelName}`, "WARNING");
+                this.destruct();
             }
-        );
+        });
     }
 
     destruct() {
@@ -138,7 +131,7 @@ export class VoiceControl {
         }
     }
 
-    private speakQueue: AudioResource<any>[] = [];
+    private speakQueue: AudioResource<unknown>[] = [];
 
     async speak(content: string): Promise<boolean> {
         sLogger.log(
@@ -155,26 +148,31 @@ export class VoiceControl {
         const initiated = !!this.speakQueue.length;
 
         this.speakQueue = this.speakQueue.concat(
-            results.map((res) =>
-                createAudioResource(res.url, {
-                    inputType: StreamType.OggOpus,
+            await Promise.all(
+                results.map(async (url) => {
+                    const stream = await new Promise<IncomingMessage>(
+                        (res, _) => {
+                            https.get(url.url, (stream) => {
+                                res(stream);
+                            });
+                        }
+                    );
+
+                    return createAudioResource(stream);
                 })
             )
         );
 
         if (!initiated) this.player.play(this.speakQueue.shift()!);
 
-        return new Promise<boolean>((resolve, reject) => {
-            this.player.on(
-                AudioPlayerStatus.Idle,
-                (() => {
-                    if (this.speakQueue.length) {
-                        this.player.play(this.speakQueue.shift()!);
-                    } else {
-                        resolve(true);
-                    }
-                }).bind(this)
-            );
+        return new Promise<boolean>((resolve, _) => {
+            this.player.on(AudioPlayerStatus.Idle, () => {
+                if (this.speakQueue.length) {
+                    this.player.play(this.speakQueue.shift()!);
+                } else {
+                    resolve(true);
+                }
+            });
             // * By GitHub Copilot
             this.player.on("error", (err) => {
                 sLogger.log(
@@ -207,14 +205,11 @@ export class VoiceControl {
         this.player.play(musicRc);
         this.songRunning = true;
 
-        return new Promise<boolean>((resolve, reject) => {
-            this.player.on(
-                AudioPlayerStatus.Idle,
-                (() => {
-                    this.songRunning = false;
-                    resolve(true);
-                }).bind(this)
-            );
+        return new Promise<boolean>((resolve, _) => {
+            this.player.on(AudioPlayerStatus.Idle, () => {
+                this.songRunning = false;
+                resolve(true);
+            });
             this.player.on("error", (err: AudioPlayerError) => {
                 this.songRunning = false;
                 sLogger.log(

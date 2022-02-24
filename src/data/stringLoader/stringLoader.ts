@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Loader } from "../loader";
 
 export type transformFunction = (t: any) => string;
