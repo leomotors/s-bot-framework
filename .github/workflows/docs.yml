@@ -3,8 +3,9 @@
 name: Documentation
 
 on:
-  release:
-    types: [released]
+  push:
+    branches:
+      - main
 
 jobs:
   docs:
