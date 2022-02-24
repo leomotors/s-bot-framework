@@ -2,6 +2,20 @@
 
 All notable changes to the "s-bot-framework" extension ~~will~~ may be documented in this file.
 
+## [1.0.400] - 2022-02-24
+
+- Addressed an issue where TTS no longer work after played music
+
+- Re-Format Code and Bump Dependencies
+
+- Logging is now default to deactivated, same for logging incoming message to console
+
+- This package no longer ships with audio encoding dependencies, don't forget to install them!
+
+- Added await to all message's method. This improves error handling and make sure bot won't shut down.
+
+**PS**: Did not refactor the code, too messy to be fixed today.
+
 ## 1.0.302
 
 - Fixed detection bug

@@ -1,13 +1,13 @@
 {
   "name": "s-bot-framework",
-  "version": "4.0.0-alpha.1",
+  "version": "1.0.400",
   "description": "Discord Bot Framework built for Salim Bot but also applicable for other uses",
   "main": "dist/index.js",
   "types": "dist",
   "type": "module",
   "scripts": {
-    "build": "yarn lm-config && yarn clean && tsc -p .",
-    "clean": "rm -rf dist",
+    "build": "yarn lm-config && yarn clean && tsc && tsc -p tsconfig.bruh.json",
+    "clean": "rm -rf dist/*",
     "docs": "typedoc src/index.ts",
     "format": "prettier --write \"src/**/*.ts\"",
     "lint": "eslint src && prettier --check \"src/**/*.ts\""
@@ -29,23 +29,23 @@
     "salim-bot"
   ],
   "dependencies": {
-    "@discordjs/voice": "0.7.5",
-    "chalk": "^5.0.0",
+    "@discordjs/voice": "0.8.0",
+    "chalk": "5.0.0",
     "discord.js": "^13.6.0",
-    "dotenv": "^11.0.0",
+    "dotenv": "^16.0.0",
     "google-tts-api": "^2.0.2",
-    "node-fetch": "^3.1.0",
-    "strip-ansi": "^7.0.1",
-    "ytdl-core": "^4.10.0"
+    "node-fetch": "^3.2.0",
+    "strip-ansi": "7.0.1",
+    "ytdl-core": "^4.10.1"
   },
   "devDependencies": {
     "@trivago/prettier-plugin-sort-imports": "^3.2.0",
     "@typescript-eslint/eslint-plugin": "^5.12.1",
     "@typescript-eslint/parser": "^5.12.1",
     "eslint": "^8.9.0",
-    "leomotors-automation": "^1.0.1",
+    "leomotors-automation": "^3.0.1",
     "prettier": "^2.5.1",
-    "typedoc": "^0.22.10",
-    "typescript": "^4.5.4"
+    "typedoc": "^0.22.12",
+    "typescript": "^4.5.5"
   }
 }

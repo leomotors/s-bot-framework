@@ -34,12 +34,11 @@ export interface MessageResponse {
 }
 
 export interface SBotOptions {
-    token?: string;
+    token: string | undefined;
     activityRefreshInterval?: number;
-    // * To Disable Logging: Use null here, undefined will use default location
-    logLocation?: string | null;
-    // * If is true, bot will not deafen when join voice channel
+    logLocation?: string;
     ignorePrivacy?: boolean;
+    logIncomingMessage?: boolean;
 }
 
 export class SBotClient {
@@ -56,6 +55,21 @@ export class SBotClient {
 
     private options: SBotOptions;
 
+    /**
+     * @param options Options has 5 fields
+     *
+     * - token: Bot Token, Defaults to `process.env.DISCORD_TOKEN`
+     *
+     * - activityRefreshInterval (Optional): Default 600 seconds
+     *
+     * - logLocation: Location for logging, Default is deactivated
+     *
+     * - ignorePrivacy: If set to true, bot will not deafen when joining voice channel,
+     * PS: this bot does not listen to voice chat
+     *
+     * - logIncomingMessage: If set to true, will report every incoming message
+     * just like older version of Salim Bot
+     */
     constructor(options?: SBotOptions) {
         this.client = new Client({
             intents: [
@@ -84,9 +98,9 @@ export class SBotClient {
 
         const {
             token = process.env.DISCORD_TOKEN,
-            activityRefreshInterval = 120,
+            activityRefreshInterval = 600,
             logLocation,
-        } = (this.options = options ?? {});
+        } = (this.options = options ?? ({} as SBotOptions));
 
         Logger.startFile(logLocation);
 
@@ -150,25 +164,36 @@ export class SBotClient {
         this.utility.response.push(response);
     }
 
-    private response(msg: Message) {
+    private async response(msg: Message) {
         if (msg.author.id == this.client.user?.id) return;
 
         if (msg.author.bot) return;
 
-        Logger.log(`Recieved Message from ${msg.author.tag}: ${msg.content}`);
+        if (this.options.logIncomingMessage)
+            Logger.log(
+                `Recieved Message from ${msg.author.tag}: ${msg.content}`
+            );
 
         // * DJ Corgi Part
-        if (this.djCorgiResponse(msg)) return;
+        if (
+            await this.djCorgiResponse(msg).catch((err) =>
+                Logger.log(
+                    `Error while handling DJ Corgi (djCorgiResponse): ${err}`,
+                    "ERROR"
+                )
+            )
+        )
+            return;
 
         // * Registered Response Part
         for (const response of this.utility.response) {
             if (response.isTrigger(msg.content)) {
                 const reply = response.getReply();
                 try {
-                    if (reply.react) msg.react(reply.react);
-                    if (reply.reply) msg.reply(reply.message);
-                    else msg.channel.send(reply.message);
-                    if (reply.audio) this.ttsJutsu(msg, reply.message);
+                    if (reply.react) await msg.react(reply.react);
+                    if (reply.reply) await msg.reply(reply.message);
+                    else await msg.channel.send(reply.message);
+                    if (reply.audio) this.corgiSwiftJutsu(msg, reply.message);
 
                     const refInd = reply.refIndex;
                     Logger.log(
@@ -196,11 +221,17 @@ export class SBotClient {
     private voiceOptions?: VoiceOptions;
     private voiceCtrl?: VoiceControl;
 
+    /**
+     * Activate voice feature, you will need to provide words
+     * for your bot to speak under each circumstance.
+     *
+     * See: src/client/clientVoice.ts @ `VoiceOptions`
+     */
     useVoice(options: VoiceOptions) {
         this.voiceOptions = options;
     }
 
-    private djCorgiResponse(msg: Message): boolean {
+    private async djCorgiResponse(msg: Message) {
         if (
             this.djCommands &&
             checkPrefix(msg.content, this.djCommands.play.prefixes)
@@ -214,10 +245,10 @@ export class SBotClient {
                 if (this.voiceCtrl) {
                     this.voiceCtrl.forceSkip();
                     this.djCommands.skip.react &&
-                        msg.react(this.djCommands.skip.react);
+                        (await msg.react(this.djCommands.skip.react));
                 } else {
                     this.djCommands.skip.already_empty &&
-                        msg.reply(this.djCommands.skip.already_empty);
+                        (await msg.reply(this.djCommands.skip.already_empty));
                 }
                 return true;
             }
@@ -229,25 +260,16 @@ export class SBotClient {
                     this.corgiSwiftQueue = [];
                     this.voiceCtrl.forceSkip();
                     this.djCommands.clear.react &&
-                        msg.react(this.djCommands.clear.react);
+                        (await msg.react(this.djCommands.clear.react));
                 } else {
                     this.djCommands.clear.already_empty &&
-                        msg.reply(this.djCommands.clear.already_empty);
+                        (await msg.reply(this.djCommands.clear.already_empty));
                 }
                 return true;
             }
         }
 
         return false;
-    }
-
-    private async ttsJutsu(msg: Message, content: string) {
-        if (!this.voiceOptions?.jutsu) return;
-
-        if (this.voiceOptions.jutsu == "CorgiSwift") {
-            this.corgiSwiftJutsu(msg, content);
-            return;
-        }
     }
 
     private corgiSwiftQueue: corgiQueue[] = [];
@@ -326,6 +348,12 @@ export class SBotClient {
 
     private songOptions?: SongOptions[];
     private djCommands?: DJCommands;
+    /**
+     * Activate DJ Feature, see [Salim Bot](https://github.com/Leomotors/Salim-Bot)
+     *
+     * Basically, like other part of this framework, you need to provide all
+     * information and the framework will take care of them
+     */
     useDJ(SongOptions: SongOptions[], Options: DJCommands) {
         this.songOptions = SongOptions;
         this.djCommands = Options;
@@ -351,8 +379,9 @@ export class SBotClient {
 
         if (validateRes) {
             if (failMsg) {
-                if (fallbackMsg!.reply && !msg.deleted) msg.reply(failMsg);
-                else msg.channel.send(failMsg);
+                if (fallbackMsg!.reply && !msg.deleted)
+                    await msg.reply(failMsg);
+                else await msg.channel.send(failMsg);
             }
             return;
         }
@@ -402,7 +431,7 @@ export class SBotClient {
                     });
                     const m = this.djCommands.overrides.direct_youtube!.message;
                     if (this.djCommands.overrides.direct_youtube!.reply)
-                        msg.reply(m);
+                        await msg.reply(m);
                     else msg.channel.send(m);
                     if (this.corgiSwiftQueue.length < 2)
                         this.corgiSwiftClearQueue();
@@ -437,8 +466,8 @@ export class SBotClient {
                     );
 
                     if (this.djCommands!.play.reply && !msg.deleted)
-                        msg.reply(message);
-                    else msg.channel.send(message);
+                        await msg.reply(message);
+                    else await msg.channel.send(message);
                     return;
                 }
                 selectedIndex = matched[0].index;
@@ -446,8 +475,8 @@ export class SBotClient {
                 const sf = this.djCommands!.play.search_fail;
                 if (sf) {
                     if (this.djCommands!.play.reply && !msg.deleted)
-                        msg.reply(sf);
-                    else msg.channel.send(sf);
+                        await msg.reply(sf);
+                    else await msg.channel.send(sf);
                     return;
                 }
             }
@@ -473,8 +502,8 @@ export class SBotClient {
             else message += ` ${this.djCommands!.play.onQueued.song}`;
         }
 
-        if (this.djCommands!.play.reply) msg.reply(message);
-        else msg.channel.send(message);
+        if (this.djCommands!.play.reply) await msg.reply(message);
+        else await msg.channel.send(message);
 
         if (isEmptyQueue) this.corgiSwiftClearQueue();
     }
@@ -486,7 +515,7 @@ export class SBotClient {
                 const vidInfo = await ytdl.getBasicInfo(song.url);
                 const msgE = new MessageEmbed({
                     title: embed.title ?? "Now Playing",
-                    description: `\`\`\`css\n${
+                    description: `\`\`\`\n${
                         song.name ?? vidInfo.videoDetails.title
                     }\n\`\`\``,
                     color: embed.color ?? "BLUE",
@@ -512,7 +541,7 @@ export class SBotClient {
                     )
                     .setTimestamp()
                     .setFooter({ text: embed.footer ?? "" });
-                msg.channel.send({ embeds: [msgE] });
+                await msg.channel.send({ embeds: [msgE] });
             } catch (err) {
                 Logger.log(
                     `Error getting info of ${song.name} or sending its embed : ${err}`,
@@ -535,8 +564,9 @@ export class SBotClient {
             if (this.voiceOptions?.fallback && !msg.deleted) {
                 const iemsg = this.voiceOptions.fallback.internal;
                 if (iemsg) {
-                    if (this.voiceOptions.fallback.reply) msg.reply(iemsg);
-                    else msg.channel.send(iemsg);
+                    if (this.voiceOptions.fallback.reply)
+                        await msg.reply(iemsg);
+                    else await msg.channel.send(iemsg);
                 }
             }
             this.voiceCtrl?.destruct();

@@ -1,3 +1,4 @@
 export * from "./activityLoader";
-export * from "./stringLoader";
+export * from "./loader";
 export * from "./songLoader";
+export * from "./stringLoader";

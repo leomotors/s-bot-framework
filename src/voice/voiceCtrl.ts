@@ -36,8 +36,6 @@ export class VoiceControl {
     private channelName: string;
     private voiceChannelID: string;
 
-    private songRunning = false;
-
     isSameChannel(channel?: VoiceChannel | StageChannel | null) {
         return channel?.id == this.voiceChannelID;
     }
@@ -77,7 +75,7 @@ export class VoiceControl {
             guildId: voiceChannel.guild.id,
             adapterCreator: voiceChannel.guild
                 .voiceAdapterCreator as DiscordGatewayAdapterCreator,
-            selfMute: ignorePrivacy,
+            selfDeaf: !ignorePrivacy,
         });
 
         connection.subscribe(this.player);
@@ -149,17 +147,15 @@ export class VoiceControl {
 
         this.speakQueue = this.speakQueue.concat(
             await Promise.all(
-                results.map(async (url) => {
-                    const stream = await new Promise<IncomingMessage>(
-                        (res, _) => {
+                results.map(async (url) =>
+                    createAudioResource(
+                        await new Promise<IncomingMessage>((res, _) => {
                             https.get(url.url, (stream) => {
                                 res(stream);
                             });
-                        }
-                    );
-
-                    return createAudioResource(stream);
-                })
+                        })
+                    )
+                )
             )
         );
 
@@ -203,15 +199,12 @@ export class VoiceControl {
 
         sLogger.log(`[DJCorgi] Playing ${title} in category of ${category}`);
         this.player.play(musicRc);
-        this.songRunning = true;
 
         return new Promise<boolean>((resolve, _) => {
             this.player.on(AudioPlayerStatus.Idle, () => {
-                this.songRunning = false;
                 resolve(true);
             });
             this.player.on("error", (err: AudioPlayerError) => {
-                this.songRunning = false;
                 sLogger.log(
                     `[DJCorgi] Error while playing ${title}: ${err.message}`,
                     "ERROR"

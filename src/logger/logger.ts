@@ -12,12 +12,10 @@ export abstract class sLogger {
     private static file_path: string;
     private static file_status = false;
 
-    static async startFile(file_path: string | undefined | null) {
-        if (file_path === null) {
+    static async startFile(file_path: string | undefined) {
+        if (!file_path) {
             sLogger.file_status = false;
             return;
-        } else if (file_path === undefined) {
-            file_path = "log";
         }
 
         const actual_path = `${file_path}/${getFormattedTime(true)}.txt`;

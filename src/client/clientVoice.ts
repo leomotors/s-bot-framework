@@ -2,8 +2,7 @@ import { ColorResolvable, Message } from "discord.js";
 
 import { Song, SongLoader } from "../data/songLoader";
 
-export interface CorgiSwiftJutsu {
-    jutsu: "CorgiSwift";
+export interface VoiceOptions {
     fallback?: {
         no_channel?: string;
         stage_channel?: string;
@@ -12,8 +11,6 @@ export interface CorgiSwiftJutsu {
         reply?: boolean;
     };
 }
-
-export type VoiceOptions = CorgiSwiftJutsu;
 
 export enum SongAppearance {
     EVERYWHERE = 0,
@@ -77,13 +74,13 @@ export interface DJCommands {
     };
 }
 
-interface corgiQueueTTS {
+export interface corgiQueueTTS {
     msg: Message;
     type: "TTS";
     content: string;
 }
 
-interface corgiQueueSong {
+export interface corgiQueueSong {
     msg: Message;
     type: "SONG";
     song: Song;

@@ -106,3 +106,5 @@ dist
 .vscode
 
 src/config.ts
+
+docs
