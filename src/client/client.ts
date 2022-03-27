@@ -9,7 +9,7 @@ import {
 import dotenv from "dotenv";
 import ytdl from "ytdl-core";
 
-import { Version as FrameworkVersion } from "../config";
+import { Version as FrameworkVersion } from "../config.g";
 import { Console } from "../console/console";
 import { ActivityLoader } from "../data/activityLoader";
 import { Song } from "../data/songLoader";
@@ -45,6 +45,10 @@ export class SBotClient {
     client: Client;
     get user() {
         return this.client.user;
+    }
+
+    get readlineInterface() {
+        return this.utility?.console?.rl;
     }
 
     private utility: {

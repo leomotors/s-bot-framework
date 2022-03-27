@@ -105,6 +105,6 @@ dist
 
 .vscode
 
-src/config.ts
+*.g.*
 
 docs

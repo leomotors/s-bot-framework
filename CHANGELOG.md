@@ -2,6 +2,16 @@
 
 All notable changes to the "s-bot-framework" extension ~~will~~ may be documented in this file.
 
+## [1.0.401] - 2022-03-??
+
+This update focuses on making this library compatible with Cocoa Discord Utils
+
+*S-Bot-Framework* is dead.
+
+- You can now import framework version directly
+
+- You can access readline interface used by console
+
 ## [1.0.400] - 2022-02-24
 
 - Addressed an issue where TTS no longer work after played music

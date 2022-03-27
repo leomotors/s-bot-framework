@@ -2,7 +2,7 @@ import chalk from "chalk";
 import fs from "fs/promises";
 import stripAnsi from "strip-ansi";
 
-import { Version as FrameworkVersion } from "../config";
+import { Version as FrameworkVersion } from "../config.g";
 
 import { getFormattedTime } from "./time";
 

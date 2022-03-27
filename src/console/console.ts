@@ -5,16 +5,17 @@ import { Loader } from "../data/loader";
 
 export class Console {
     sbclient?: SBotClient;
+    rl: readline.Interface;
 
     constructor(client: SBotClient) {
         this.sbclient = client;
 
-        const rl = readline.createInterface({
+        this.rl = readline.createInterface({
             input: process.stdin,
             output: process.stdout,
         });
 
-        rl.on("line", (cmd: string) => {
+        this.rl.on("line", (cmd: string) => {
             this.execute(cmd);
         });
     }
@@ -29,6 +30,7 @@ export class Console {
                 this.sbclient?.client?.destroy();
                 process.exit(0);
             default:
+                // todo print this
                 return "Unknown Command";
         }
     }
