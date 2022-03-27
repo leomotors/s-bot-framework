@@ -2,7 +2,11 @@
 
 All notable changes to the "s-bot-framework" extension ~~will~~ may be documented in this file.
 
-## [1.0.401] - 2022-03-??
+## [1.0.402] - 2022-03-27
+
+- Bump dependencies to fix vulnerability
+
+## [1.0.401] - 2022-03-27
 
 This update focuses on making this library compatible with Cocoa Discord Utils
 
