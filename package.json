@@ -1,6 +1,6 @@
 {
   "name": "s-bot-framework",
-  "version": "1.0.402",
+  "version": "1.0.420",
   "description": "Discord Bot Framework built for Salim Bot but also applicable for other uses",
   "main": "dist/index.js",
   "types": "dist",
@@ -29,7 +29,7 @@
     "salim-bot"
   ],
   "dependencies": {
-    "@discordjs/voice": "0.8.0",
+    "@discordjs/voice": "0.9.0",
     "chalk": "5.0.1",
     "discord.js": "^13.6.0",
     "dotenv": "^16.0.0",
@@ -41,11 +41,11 @@
   "devDependencies": {
     "@leomotors/scripts": "^3.1.0",
     "@trivago/prettier-plugin-sort-imports": "^3.2.0",
-    "@typescript-eslint/eslint-plugin": "^5.16.0",
-    "@typescript-eslint/parser": "^5.16.0",
-    "eslint": "^8.12.0",
-    "prettier": "^2.6.1",
-    "typedoc": "^0.22.13",
+    "@typescript-eslint/eslint-plugin": "^5.20.0",
+    "@typescript-eslint/parser": "^5.20.0",
+    "eslint": "^8.13.0",
+    "prettier": "^2.6.2",
+    "typedoc": "^0.22.15",
     "typescript": "^4.6.3"
   }
 }

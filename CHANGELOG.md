@@ -2,6 +2,14 @@
 
 All notable changes to the "s-bot-framework" extension ~~will~~ may be documented in this file.
 
+## [1.0.420] - 2022-04-22
+
+*This update focuses on making this library compatible with Cocoa Discord Utils*
+
+- Some methods are now public for compatiblity
+
+- Voice Components now support `CommandInteraction` as Context
+
 ## [1.0.402] - 2022-03-27
 
 - Bump dependencies to fix vulnerability

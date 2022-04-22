@@ -13,12 +13,19 @@ import {
 } from "@discordjs/voice";
 
 import chalk from "chalk";
-import { Message, StageChannel, VoiceChannel } from "discord.js";
+import {
+    CommandInteraction,
+    Message,
+    GuildMember,
+    StageChannel,
+    VoiceChannel,
+} from "discord.js";
 import { getAllAudioUrls } from "google-tts-api";
 import { IncomingMessage } from "http";
 import https from "https";
 import ytdl from "ytdl-core";
 
+import { Context, getVoiceChannel } from "../client";
 import { sLogger } from "../logger";
 import { shorten } from "../utils/string";
 
@@ -40,8 +47,10 @@ export class VoiceControl {
         return channel?.id == this.voiceChannelID;
     }
 
-    static validateUser(msg: Message): VoiceValidateResult {
-        const channel = msg.member?.voice.channel;
+    static validateUser(
+        msg: Message | CommandInteraction
+    ): VoiceValidateResult {
+        const channel = (msg.member as GuildMember | undefined)?.voice.channel;
 
         // * This Bot and every others cannot enter *undefined* channel
         if (!channel) return VoiceValidateResult.NO_CHANNEL;
@@ -56,7 +65,7 @@ export class VoiceControl {
     }
 
     constructor(
-        msg: Message,
+        msg: Context,
         ignorePrivacy: boolean,
         handleDisconnect: () => void
     ) {
@@ -65,7 +74,7 @@ export class VoiceControl {
         if (validateResult) throw validateResult;
 
         this.player = createAudioPlayer();
-        const voiceChannel = msg.member!.voice.channel! as VoiceChannel;
+        const voiceChannel = getVoiceChannel(msg)!;
         this.guildID = voiceChannel.guild.id;
         this.channelName = voiceChannel.name;
         this.voiceChannelID = voiceChannel.id;

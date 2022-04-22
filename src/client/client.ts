@@ -21,7 +21,14 @@ import { checkPrefix, shorten, trim } from "../utils/string";
 import { VoiceControl, VoiceValidateResult } from "../voice";
 
 import { corgiQueue } from ".";
-import { VoiceOptions, DJCommands, SongOptions } from "./clientVoice";
+import {
+    VoiceOptions,
+    DJCommands,
+    SongOptions,
+    getVoiceChannel,
+    Context,
+    getUser,
+} from "./clientVoice";
 
 dotenv.config();
 
@@ -276,8 +283,8 @@ export class SBotClient {
         return false;
     }
 
-    private corgiSwiftQueue: corgiQueue[] = [];
-    private async corgiSwiftJutsu(msg: Message, content: string) {
+    corgiSwiftQueue: corgiQueue[] = [];
+    async corgiSwiftJutsu(msg: Context, content: string) {
         if (VoiceControl.validateUser(msg)) return;
 
         // * Ignore TTS if Music is on Queue
@@ -294,7 +301,7 @@ export class SBotClient {
 
         const { msg } = this.corgiSwiftQueue[0];
 
-        const targetVoiceChannel = msg.member?.voice.channel;
+        const targetVoiceChannel = getVoiceChannel(msg);
         if (!targetVoiceChannel?.joinable) {
             // * Users no longer in VC or VC is not joinable
             this.corgiSwiftQueue.shift();
@@ -315,9 +322,7 @@ export class SBotClient {
             while (this.corgiSwiftQueue.length) {
                 const frontier = this.corgiSwiftQueue[0];
                 if (
-                    this.voiceCtrl.isSameChannel(
-                        frontier.msg.member?.voice.channel
-                    )
+                    this.voiceCtrl.isSameChannel(getVoiceChannel(frontier.msg))
                 ) {
                     if (frontier.type == "TTS")
                         await this.voiceCtrl.speak(frontier.content);
@@ -512,7 +517,7 @@ export class SBotClient {
         if (isEmptyQueue) this.corgiSwiftClearQueue();
     }
 
-    private async corgiPlaySong(msg: Message, song: Song, category: string) {
+    private async corgiPlaySong(msg: Context, song: Song, category: string) {
         const embed = this.djCommands!.play.now_playing;
         if (embed?.send_embed) {
             try {
@@ -524,14 +529,14 @@ export class SBotClient {
                     }\n\`\`\``,
                     color: embed.color ?? "BLUE",
                     author: {
-                        name: msg.author.username,
-                        iconURL: msg.author.avatarURL() ?? undefined,
+                        name: getUser(msg).username,
+                        iconURL: getUser(msg).avatarURL() ?? undefined,
                     },
                 })
                     .setThumbnail(vidInfo.videoDetails.thumbnails[0].url)
                     .addField(
                         embed.requested_by ?? "Requested by",
-                        `<@!${msg.author.id}>`
+                        `<@!${getUser(msg).id}>`
                     )
                     .addField(
                         embed.duration ?? "Duration",
@@ -545,7 +550,7 @@ export class SBotClient {
                     )
                     .setTimestamp()
                     .setFooter({ text: embed.footer ?? "" });
-                await msg.channel.send({ embeds: [msgE] });
+                await msg.channel?.send({ embeds: [msgE] });
             } catch (err) {
                 Logger.log(
                     `Error getting info of ${song.name} or sending its embed : ${err}`,
@@ -565,12 +570,12 @@ export class SBotClient {
             Logger.log(
                 `DJCorgi Music Deliwry Mission Failed while playing ${song.name}: ${err}`
             );
-            if (this.voiceOptions?.fallback && !msg.deleted) {
+            if (this.voiceOptions?.fallback) {
                 const iemsg = this.voiceOptions.fallback.internal;
                 if (iemsg) {
                     if (this.voiceOptions.fallback.reply)
                         await msg.reply(iemsg);
-                    else await msg.channel.send(iemsg);
+                    else await msg.channel?.send(iemsg);
                 }
             }
             this.voiceCtrl?.destruct();

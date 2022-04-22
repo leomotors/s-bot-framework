@@ -1,6 +1,21 @@
-import { ColorResolvable, Message } from "discord.js";
+import {
+    ColorResolvable,
+    CommandInteraction,
+    GuildMember,
+    Message,
+} from "discord.js";
 
 import { Song, SongLoader } from "../data/songLoader";
+
+export type Context = Message | CommandInteraction;
+
+export function getVoiceChannel(ctx: Context) {
+    return (ctx.member as GuildMember | undefined)?.voice?.channel;
+}
+
+export function getUser(ctx: Context) {
+    return (ctx as Message).author ?? (ctx as CommandInteraction).user;
+}
 
 export interface VoiceOptions {
     fallback?: {
@@ -75,13 +90,13 @@ export interface DJCommands {
 }
 
 export interface corgiQueueTTS {
-    msg: Message;
+    msg: Message | CommandInteraction;
     type: "TTS";
     content: string;
 }
 
 export interface corgiQueueSong {
-    msg: Message;
+    msg: Message | CommandInteraction;
     type: "SONG";
     song: Song;
     category: string;
