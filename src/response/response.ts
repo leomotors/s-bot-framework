@@ -1,3 +1,5 @@
+import { Awaitable, Message } from "discord.js";
+
 import { MessageResponse, SBotClient } from "../client";
 import { StringLoader } from "../data";
 import { trim } from "../utils/string";
@@ -19,6 +21,7 @@ export interface responseOptions {
 export interface ResponseOptions {
     trigger: TriggerOptions;
     response: responseOptions;
+    after?: (msg: Message) => Awaitable<void>;
 }
 
 export class Response {
@@ -28,8 +31,9 @@ export class Response {
         this.client = client;
     }
 
-    private trigger: TriggerOptions;
-    private response: responseOptions;
+    trigger: TriggerOptions;
+    response: responseOptions;
+    after?: (msg: Message) => Awaitable<void>;
 
     private triggeredKeyword?: string;
     get triggered() {
@@ -42,10 +46,11 @@ export class Response {
     }
 
     constructor(Options: ResponseOptions) {
-        const { trigger, response } = Options;
+        const { trigger, response, after } = Options;
 
         this.trigger = trigger;
         this.response = response;
+        this.after = after;
     }
 
     isTrigger(message: string) {

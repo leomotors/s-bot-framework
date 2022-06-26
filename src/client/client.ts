@@ -212,6 +212,8 @@ export class SBotClient {
                             refInd ? ` (${refInd})` : ""
                         }`
                     );
+
+                    await response.after?.(msg);
                 } catch (err) {
                     Logger.log(
                         `Error while responding to message : ${err}`,
@@ -515,6 +517,8 @@ export class SBotClient {
         else await msg.channel.send(message);
 
         if (isEmptyQueue) this.corgiSwiftClearQueue();
+
+        await this.djCommands?.afterRequest?.(msg);
     }
 
     private async corgiPlaySong(msg: Context, song: Song, category: string) {

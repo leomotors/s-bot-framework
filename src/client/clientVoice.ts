@@ -1,4 +1,5 @@
 import {
+    Awaitable,
     ColorResolvable,
     CommandInteraction,
     GuildMember,
@@ -87,6 +88,7 @@ export interface DJCommands {
             prefixes: string[];
         };
     };
+    afterRequest?: (msg: Message) => Awaitable<void>;
 }
 
 export interface corgiQueueTTS {

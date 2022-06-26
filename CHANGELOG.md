@@ -2,6 +2,12 @@
 
 All notable changes to the "s-bot-framework" extension ~~will~~ may be documented in this file.
 
+## [1.0.430] - 2022-06-26
+
+*This update focuses on allowing you to do more this with legacy code, basically unlocks stuff*
+
+- Introducing response hooks, this allows you to do custom stuff after response has been sent
+
 ## [1.0.420] - 2022-04-22
 
 *This update focuses on making this library compatible with Cocoa Discord Utils*
