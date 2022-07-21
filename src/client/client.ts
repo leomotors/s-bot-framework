@@ -3,10 +3,12 @@ import {
     ActivityOptions,
     Client,
     Message,
-    Intents,
-    MessageEmbed,
+    IntentsBitField,
+    EmbedBuilder,
+    Partials,
+    ActivityType,
 } from "discord.js";
-import dotenv from "dotenv";
+import "dotenv/config";
 import ytdl from "ytdl-core";
 
 import { Version as FrameworkVersion } from "../config.g";
@@ -29,8 +31,6 @@ import {
     Context,
     getUser,
 } from "./clientVoice";
-
-dotenv.config();
 
 export interface MessageResponse {
     message: string;
@@ -82,16 +82,18 @@ export class SBotClient {
      * just like older version of Salim Bot
      */
     constructor(options?: SBotOptions) {
+        const F = IntentsBitField.Flags;
+
         this.client = new Client({
             intents: [
-                Intents.FLAGS.GUILDS,
-                Intents.FLAGS.GUILD_MESSAGES,
-                Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
-                Intents.FLAGS.GUILD_VOICE_STATES,
-                Intents.FLAGS.DIRECT_MESSAGES,
-                Intents.FLAGS.DIRECT_MESSAGE_REACTIONS,
+                F.Guilds,
+                F.GuildMembers,
+                F.GuildMessageReactions,
+                F.GuildVoiceStates,
+                F.DirectMessages,
+                F.DirectMessageReactions,
             ],
-            partials: ["CHANNEL"],
+            partials: [Partials.Channel],
         });
 
         const start = performance.now();
@@ -166,7 +168,11 @@ export class SBotClient {
 
         if (selectedActivity) {
             const { type, name = "" } = selectedActivity;
-            this.client.user?.setActivity(name, { type, name });
+            this.client.user?.setActivity(name, {
+                // @ts-ignore
+                type: ActivityType[type],
+                name,
+            });
         }
     }
 
@@ -390,8 +396,7 @@ export class SBotClient {
 
         if (validateRes) {
             if (failMsg) {
-                if (fallbackMsg!.reply && !msg.deleted)
-                    await msg.reply(failMsg);
+                if (fallbackMsg!.reply) await msg.reply(failMsg);
                 else await msg.channel.send(failMsg);
             }
             return;
@@ -476,8 +481,7 @@ export class SBotClient {
                         1950
                     );
 
-                    if (this.djCommands!.play.reply && !msg.deleted)
-                        await msg.reply(message);
+                    if (this.djCommands!.play.reply) await msg.reply(message);
                     else await msg.channel.send(message);
                     return;
                 }
@@ -485,8 +489,7 @@ export class SBotClient {
             } else {
                 const sf = this.djCommands!.play.search_fail;
                 if (sf) {
-                    if (this.djCommands!.play.reply && !msg.deleted)
-                        await msg.reply(sf);
+                    if (this.djCommands!.play.reply) await msg.reply(sf);
                     else await msg.channel.send(sf);
                     return;
                 }
@@ -526,31 +529,38 @@ export class SBotClient {
         if (embed?.send_embed) {
             try {
                 const vidInfo = await ytdl.getBasicInfo(song.url);
-                const msgE = new MessageEmbed({
+                const user = getUser(msg);
+
+                const msgE = new EmbedBuilder({
                     title: embed.title ?? "Now Playing",
                     description: `\`\`\`\n${
                         song.name ?? vidInfo.videoDetails.title
                     }\n\`\`\``,
-                    color: embed.color ?? "BLUE",
                     author: {
-                        name: getUser(msg).username,
-                        iconURL: getUser(msg).avatarURL() ?? undefined,
+                        name: user.username,
+                        iconURL: user.avatarURL() ?? user.defaultAvatarURL,
                     },
                 })
+                    .setColor(embed.color ?? "Blue")
                     .setThumbnail(vidInfo.videoDetails.thumbnails[0].url)
-                    .addField(
-                        embed.requested_by ?? "Requested by",
-                        `<@!${getUser(msg).id}>`
-                    )
-                    .addField(
-                        embed.duration ?? "Duration",
-                        durationFormat(
-                            vidInfo.player_response.videoDetails.lengthSeconds
-                        )
-                    )
-                    .addField(
-                        embed.link ?? "Link",
-                        `[${embed.click_here ?? "Click"}](${song.url})`
+                    .addFields(
+                        {
+                            name: embed.requested_by ?? "Requested by",
+                            value: `<@!${user.id}>`,
+                        },
+                        {
+                            name: embed.duration ?? "Duration",
+                            value: durationFormat(
+                                vidInfo.player_response.videoDetails
+                                    .lengthSeconds
+                            ),
+                        },
+                        {
+                            name: embed.link ?? "Link",
+                            value: `[${embed.click_here ?? "Click"}](${
+                                song.url
+                            })`,
+                        }
                     )
                     .setTimestamp()
                     .setFooter({ text: embed.footer ?? "" });

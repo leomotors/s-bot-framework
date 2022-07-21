@@ -19,5 +19,4 @@ jobs:
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_TITLE: "S Bot Framework {VERSION}"
-          VERSION_MUST_INCREASE: true
           TAG: ${{ github.ref }}

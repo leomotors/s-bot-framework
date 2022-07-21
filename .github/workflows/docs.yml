@@ -9,20 +9,11 @@ on:
 
 jobs:
   docs:
-    strategy:
-      matrix:
-        node: ['16']
-
-    name: Documentation (Node v${{ matrix.node }})
+    name: Documentation
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-
-      - name: Install Node v${{ matrix.node }}
-        uses: actions/setup-node@v1
-        with:
-          node-version: ${{ matrix.node }}
 
       - name: Yarn Cache
         uses: c-hive/gha-yarn-cache@v2

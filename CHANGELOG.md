@@ -2,6 +2,10 @@
 
 All notable changes to the "s-bot-framework" extension ~~will~~ may be documented in this file.
 
+## [1.1.444] - 2022-07-21
+
+- BREAKING: Upgrade and migrate dependency to discord.js 14
+
 ## [1.0.430] - 2022-06-26
 
 *This update focuses on allowing you to do more this with legacy code, basically unlocks stuff*
