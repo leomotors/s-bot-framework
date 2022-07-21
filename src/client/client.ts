@@ -93,6 +93,7 @@ export class SBotClient {
                 F.GuildVoiceStates,
                 F.DirectMessages,
                 F.DirectMessageReactions,
+                F.MessageContent,
             ],
             partials: [Partials.Channel],
         });
