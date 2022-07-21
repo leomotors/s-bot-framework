@@ -88,6 +88,7 @@ export class SBotClient {
             intents: [
                 F.Guilds,
                 F.GuildMembers,
+                F.GuildMessages,
                 F.GuildMessageReactions,
                 F.GuildVoiceStates,
                 F.DirectMessages,
